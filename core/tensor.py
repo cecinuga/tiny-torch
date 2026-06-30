@@ -28,12 +28,20 @@ class Tensor:
             return Tensor(self.data - other.data)
         return Tensor(self.data - other)
 
+    def __matmul__(self, other: Tensor | np.ndarray):
+        return self.matmul(other)
+
+    def __truediv__(self, other:Tensor | np.ndarray):
+        if isinstance(other, Tensor):
+            return Tensor(self.data / other.data)
+        return Tensor(self.data / other)
+
     def matmul(self, other: Tensor | np.ndarray) -> Tensor:
         if len(self.shape) >= 2 and len(other.shape) >= 2:
-            if self.shape[-1] != other.shape[-1]:
+            if self.shape[-1] != other.shape[-2]:
                 raise ValueError(
                     f"cannot perform matrix multiplication: {self.shape} @ {other.shape}\n"+
-                    f"inner dimension must match: {self.shape[-1]} != {other.shape[-1]}"
+                    f"inner dimension must match: {self.shape[-1]} != {other.shape[-2]}"
                 )
 
         result_data = np.matmul(self.data, other.data)
@@ -82,4 +90,11 @@ class Tensor:
     def max(self, axis=None, keepdims=False) -> Tensor:
         return Tensor(np.max(self.data, axis=axis, keepdims=keepdims))
 
+    def min(self, axis=None, keepdims=False) -> Tensor:
+        return Tensor(np.min(self.data, axis=axis, keepdims=keepdims))
+
 a = Tensor([[[1,2,3], [4,5,6], [7, 8, 9], [10, 11, 12]], [[13,14,15], [16,17,18], [19, 20, 21], [22, 23, 24]]])
+
+print(a.shape)
+print(a)
+print(a.mean(2))

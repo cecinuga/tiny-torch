@@ -25,7 +25,7 @@ class Sigmoid:
         result[pos_mask] = 1.0 / (1.0 + np.exp(-z[pos_mask]))
 
         # Negative input: alternative formula
-        neg_mask = z <= 0
+        neg_mask = z < 0
         exp_z = np.exp(z[neg_mask])
         result[neg_mask] = exp_z / (1.0 + exp_z)
 
@@ -58,10 +58,10 @@ class Softmax:
         x_shifted = x.data - x_max
 
         # 2. Compute safe exponentials
-        exp_values = np.exp(x_shifted.data)
+        exp_values = np.exp(x_shifted)
 
         # 3. Normalize
-        exp_sum = np.sum(exp_values.data, axis=dim, keepdims=True)
+        exp_sum = np.sum(exp_values, axis=dim, keepdims=True)
         return Tensor(exp_values / exp_sum)
 
     def __call__(self, x: Tensor) -> Tensor:

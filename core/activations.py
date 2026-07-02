@@ -46,8 +46,7 @@ class GELU:
     def forward(self, x: Tensor) -> Tensor:
         # Approximation: x + sigmoid(1.702 * x)
         # 1.702 is derived from sqrt(2/pi)
-        sigmoid_part = 1.0 / (1.0 + np.exp(-1.702 * x.data))
-        return Tensor(sigmoid_part)
+        return Sigmoid()(x * 1.702) * x
 
     def __call__(self, x: Tensor) -> Tensor:
         return self.forward(x)

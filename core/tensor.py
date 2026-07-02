@@ -18,15 +18,20 @@ class Tensor:
     def numpy(self):
         return self.data
 
-    def __add__(self, other: Tensor | np.ndarray):
+    def __add__(self, other: Tensor | np.ndarray | float):
         if isinstance(other, Tensor):
             return Tensor(self.data + other.data)
         return Tensor(self.data + other)
 
-    def __sub__(self, other: Tensor | np.ndarray):
+    def __sub__(self, other: Tensor | np.ndarray | float):
         if isinstance(other, Tensor):
             return Tensor(self.data - other.data)
         return Tensor(self.data - other)
+
+    def __mul__(self, other: Tensor | np.ndarray | float):
+        if isinstance(other, Tensor):
+            return Tensor(self.data * other.data)
+        return Tensor(self.data * other)
 
     def __matmul__(self, other: Tensor | np.ndarray):
         return self.matmul(other)

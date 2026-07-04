@@ -2,19 +2,31 @@ import numpy as np
 from core.tensor import Tensor
 
 class Layer:
-    def forward(selx, x):
+    def __init__(self, *args, **kwargs):
+        self.args = args
+        self.kwargs = kwargs
+
+    def __name__(self):
+        return "Layer"
+
+    def __repr__(self):
+        return f"{self.__name__()}=({self.args}, {self.kwargs})"
+    
+    def forward(selx, x, *args, **kwargs):
         """Compute layer output"""
         raise NotImplementedError
-    
-    def parameters(self):
-        """Return list of trainable parameters"""
-        return []
     
     def __call__(self, x, *args, **kwargs):
         return self.forward(x, *args, **kwargs)
     
-class Linear(Layer):
+    @property
+    def parameters(self):
+        """Return list of trainable parameters"""
+        return []
+    
+class Linear(Layer):  
     def __init__(self, in_feature:int, out_feature:int, bias=True):
+        super().__init__(in_feature, out_feature, bias)
         self.in_feature = in_feature
         
         # Xavier initialization
@@ -26,6 +38,9 @@ class Linear(Layer):
             self.bias = Tensor(np.zeros(out_feature))
         else:
             self.bias = None
+
+    def __name__(self):
+        return "Linear"
 
     def forward(self, x: Tensor):
         """Compute the layer output: y = xW + b"""
@@ -50,9 +65,11 @@ class Linear(Layer):
     
 class Dropout(Layer):
     def __init__(self, p=0.5):
+        super().__init__(p=0.5)
         self.p = p
 
     def forward(self, x, training=True):
+        print(training)
         if not training: 
             return x
 
@@ -66,13 +83,20 @@ class Dropout(Layer):
         # 3. Apply
         return x * Tensor(mask) * Tensor(scale)
     
+    def __name__(self):
+        return "Dropout"
+
 class Sequential(Layer):
-    def __init__(self, *layers):
+    def __init__(self, *layers: Layer):
+        super().__init__(layers)
         self.layers = list(layers)
 
-    def forward(self, x):
-        for layer in self.layer:
-            x = layer(x)
+    def forward(self, x, *args, **kwargs):
+        for i, layer in enumerate(self.layers):
+            try:
+                x = layer(x, *args, **kwargs)
+            except Exception as e:
+                raise Exception(f"layer: {i} {layer}\n",e)
         return x
     
     @property

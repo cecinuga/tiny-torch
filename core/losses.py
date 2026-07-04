@@ -26,3 +26,18 @@ class MSELoss:
        mse = np.mean(squared_diff)
 
        return Tensor(mean)
+
+class CrossEntropyLoss:
+    def forward(self, logits: Tensor, targets: Tensor) -> Tensor:
+        # 1. Apply stable log_softmax
+        log_probs = log_softmax(logits, dim=-1)
+
+        # 2. Select probability of the correct class
+        batch_size = logits.shape[0]
+        target_indices = targets.data.astype(int)
+
+        # Andvanced Indexing : "Lookup Table" style
+        selected_log_probs = log_probs.data[np.arange(batch_size), target_indices]
+
+        # 3. Negative Log Likelyhood
+        return Tensor(-np.mean(selected_log_probs))

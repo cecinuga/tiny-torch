@@ -1,6 +1,19 @@
 import numpy as np
 from core.tensor import Tensor
+
 class Layer:
+    def forward(selx, x):
+        """Compute layer output"""
+        raise NotImplementedError
+    
+    def parameters(self):
+        """Return list of trainable parameters"""
+        return []
+    
+    def __call__(self, x, *args, **kwargs):
+        return self.forward(x, *args, **kwargs)
+    
+class Linear(Layer):
     def __init__(self, in_feature:int, out_feature:int, bias=True):
         self.in_feature = in_feature
         
@@ -13,10 +26,6 @@ class Layer:
             self.bias = Tensor(np.zeros(out_feature))
         else:
             self.bias = None
-    
-    def __call__(self, x, *args, **kwargs):
-        """Allow the layer to be called like a function"""
-        return self.forward(x, *args, **kwargs)
 
     def forward(self, x: Tensor):
         """Compute the layer output: y = xW + b"""

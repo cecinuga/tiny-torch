@@ -1,7 +1,7 @@
 import numpy as np
 
 class Tensor:
-    def __init__(self, data, requires_grad=True):
+    def __init__(self, data, requires_grad:bool=True):
         if isinstance(data, (list, tuple)) and len(data) > 0 and isinstance(data[0], Tensor):
             data = np.stack([t.data for t in data])
         self.data = np.array(data, dtype=np.float32)
@@ -83,7 +83,7 @@ class Tensor:
         return Tensor(reshaped_data)
 
     def transpose(self):
-        new_shape = list(a.shape)
+        new_shape = list(self.shape)
         new_shape.reverse()
         return self.reshape(new_shape)
 

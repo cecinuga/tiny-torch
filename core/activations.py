@@ -1,16 +1,21 @@
+from typing import override
 import numpy as np
 from core.layer import Layer
 from core.tensor import Tensor
 
 class ReLU(Layer):
+    @override
     def forward(self, x: Tensor, **_) -> Tensor:
         """Apply ReLU: max(0, x)"""
         return Tensor(np.maximum(0, x.data))
-    
+
+    @property
+    @override
     def __name__(self):
         return "ReLU"
 
 class Sigmoid(Layer):
+    @override
     def forward(self, x: Tensor, **_) -> Tensor:
         # 1. Clip to prevent raw overflow
         z = np.clip(x.data, -500, 500)
@@ -30,23 +35,30 @@ class Sigmoid(Layer):
         return Tensor(result)
 
 class Tanh(Layer):
+    @override
     def forward(self, x: Tensor, **_) -> Tensor:
         # Relies on Numpy's internal optimization
         return Tensor(np.tanh(x.data))
 
+    @property
+    @override
     def __name__(self):
         return "Tanh"
 
 class GELU(Layer):
+    @override
     def forward(self, x: Tensor, **_) -> Tensor:
         # Approximation: x + sigmoid(1.702 * x)
         # 1.702 is derived from sqrt(2/pi)
         return Sigmoid()(x * 1.702) * x
 
+    @property
+    @override
     def __name__(self):
         return "GELU"
-    
+
 class Softmax(Layer):
+    @override
     def forward(self, x: Tensor, dim: int = -1, **_) -> Tensor:
         # 1. Shift values so max is 0
         x_max = np.max(x.data, axis=dim, keepdims=True)
@@ -58,6 +70,8 @@ class Softmax(Layer):
         # 3. Normalize
         exp_sum = np.sum(exp_values, axis=dim, keepdims=True)
         return Tensor(exp_values / exp_sum)
-    
-    def __name__(self):
+
+    @property
+    @override
+    def __name__(self) -> str:
         return "Softmax"

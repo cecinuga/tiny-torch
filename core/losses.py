@@ -25,7 +25,7 @@ class MSELoss:
        # 3. Mean reduction
        mse = np.mean(squared_diff)
 
-       return Tensor(mean)
+       return Tensor(mse)
 
 class CrossEntropyLoss:
     def forward(self, logits: Tensor, targets: Tensor) -> Tensor:
@@ -40,4 +40,18 @@ class CrossEntropyLoss:
         selected_log_probs = log_probs.data[np.arange(batch_size), target_indices]
 
         # 3. Negative Log Likelyhood
-        return Tensor(-np.mean(selected_log_probs))
+        cross_entropy = -np.mean(selected_log_probs)
+        return Tensor(cross_entropy)
+
+class BinaryCrossEntropyLoss:
+    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
+        # 1. Clip to prevent log(0) -> NaN
+        eps = 1e-7
+        clamped_preds = np.clip(predictions.data, eps, 1 - eps)
+
+        # Compute BCE
+        term_1 = targets.data * np.log(clamped_preds)
+        term_2 = (1 - targets.data) * np.log(1 - clamped_preds)
+
+        binary_cross_entropy = -np.mean(term_1 + term_2)
+        return Tensor(binary_cross_entropy)

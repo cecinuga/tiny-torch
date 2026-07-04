@@ -1,13 +1,14 @@
 import numpy as np
 
 class Tensor:
-    def __init__(self, data):
+    def __init__(self, data, requires_grad=True):
         if isinstance(data, (list, tuple)) and len(data) > 0 and isinstance(data[0], Tensor):
             data = np.stack([t.data for t in data])
         self.data = np.array(data, dtype=np.float32)
         self.shape = self.data.shape
         self.size = self.data.size
         self.dtype = self.data.dtype
+        self.requires_grad = True
 
     def __repr__(self):
         return f"Tensor=(shape={self.shape}, size={self.size}, dtype={self.dtype})"

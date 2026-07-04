@@ -12,11 +12,11 @@ class Layer:
     def __repr__(self):
         return f"{self.__name__()}=({self.args}, {self.kwargs})"
     
-    def forward(selx, x, *args, **kwargs):
+    def forward(selx, x: Tensor, *args, **kwargs) -> Tensor:
         """Compute layer output"""
         raise NotImplementedError
     
-    def __call__(self, x, *args, **kwargs):
+    def __call__(self, x: Tensor, *args, **kwargs) -> Tensor:
         return self.forward(x, *args, **kwargs)
     
     @property
@@ -42,7 +42,7 @@ class Linear(Layer):
     def __name__(self):
         return "Linear"
 
-    def forward(self, x: Tensor):
+    def forward(self, x: Tensor, **_):
         """Compute the layer output: y = xW + b"""
         # 1. Matrix multiplication
         output = x.matmul(self.weight)
@@ -68,7 +68,7 @@ class Dropout(Layer):
         super().__init__(p=0.5)
         self.p = p
 
-    def forward(self, x, training=True):
+    def forward(self, x, training=True, **_):
         print(training)
         if not training: 
             return x
@@ -91,12 +91,12 @@ class Sequential(Layer):
         super().__init__(layers)
         self.layers = list(layers)
 
-    def forward(self, x, *args, **kwargs):
+    def forward(self, x, **kwargs):
         for i, layer in enumerate(self.layers):
             try:
-                x = layer(x, *args, **kwargs)
+                x = layer(x, **kwargs)
             except Exception as e:
-                raise Exception(f"layer: {i} {layer}\n",e)
+                raise Exception(f"layer {i}: {layer}", e)
         return x
     
     @property

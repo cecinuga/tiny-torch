@@ -1,19 +1,20 @@
 import numpy as np
+from core.layer import Layer
 from core.tensor import Tensor
 
-class ReLU:
-    def forward(self, x: Tensor) -> Tensor:
+class ReLU(Layer):
+    def forward(self, x: Tensor, **_) -> Tensor:
         """
         Apply ReLU: max(0, x)
         Cost: 1x (Baseline)
         """
         return Tensor(np.maximum(0, x.data))
+    
+    def __name__(self):
+        return "ReLU"
 
-    def __call__(self, x: Tensor) -> Tensor:
-        return self.forward(x)
-
-class Sigmoid:
-    def forward(self, x: Tensor) -> Tensor:
+class Sigmoid(Layer):
+    def forward(self, x: Tensor, **_) -> Tensor:
         # 1. Clip to prevent raw overflow
         z = np.clip(x.data, -500, 500)
 
@@ -31,28 +32,25 @@ class Sigmoid:
 
         return Tensor(result)
 
-    def __call__(self, x: Tensor) -> Tensor:
-        return self.forward(x)
-
-class Tanh:
-    def forward(self, x: Tensor) -> Tensor:
+class Tanh(Layer):
+    def forward(self, x: Tensor, **_) -> Tensor:
         # Relies on Numpy's internal optimization
         return Tensor(np.tanh(x.data))
 
-    def __call__(self, x: Tensor) -> Tensor:
-        return self.forward(x)
+    def __name__(self):
+        return "Tanh"
 
-class GELU:
-    def forward(self, x: Tensor) -> Tensor:
+class GELU(Layer):
+    def forward(self, x: Tensor, **_) -> Tensor:
         # Approximation: x + sigmoid(1.702 * x)
         # 1.702 is derived from sqrt(2/pi)
         return Sigmoid()(x * 1.702) * x
 
-    def __call__(self, x: Tensor) -> Tensor:
-        return self.forward(x)
-
-class Softmax:
-    def forward(self, x: Tensor, dim: int = -1) -> Tensor:
+    def __name__(self):
+        return "GELU"
+    
+class Softmax(Layer):
+    def forward(self, x: Tensor, dim: int = -1, **_) -> Tensor:
         # 1. Shift values so max is 0
         x_max = np.max(x.data, axis=dim, keepdims=True)
         x_shifted = x.data - x_max
@@ -63,6 +61,6 @@ class Softmax:
         # 3. Normalize
         exp_sum = np.sum(exp_values, axis=dim, keepdims=True)
         return Tensor(exp_values / exp_sum)
-
-    def __call__(self, x: Tensor) -> Tensor:
-        return self.forward(x)
+    
+    def __name__(self):
+        return "Softmax"

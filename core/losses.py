@@ -13,3 +13,16 @@ def log_softmax(x: Tensor, dim:int=-1) -> Tensor:
 
     # 4. Result = input - max - log_sum_exp
     return Tensor(x.data - max_vals - log_sum_exp)
+
+class MSELoss:
+    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
+       # 1. Element-wise difference
+       diff = predictions.data - targets.data
+
+       # 2. Square the differences
+       squared_diff = diff ** 2
+
+       # 3. Mean reduction
+       mse = np.mean(squared_diff)
+
+       return Tensor(mean)

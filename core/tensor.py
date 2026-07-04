@@ -87,14 +87,14 @@ class Tensor:
         new_shape.reverse()
         return self.reshape(new_shape)
 
-    def sum(self, axis:int|None=None, keepdims:bool=False) -> Tensor:
+    def sum(self, axis:int|None=None, keepdims:bool = False) -> Tensor:
         return Tensor(np.sum(self.data, axis=axis, keepdims=keepdims))
 
-    def mean(self, axis:int|None, keepdims:bool=False) -> Tensor:
+    def mean(self, axis:int|None = None, keepdims:bool = False) -> Tensor:
        return Tensor(np.mean(self.data, axis=axis, keepdims=keepdims))
 
-    def max(self, axis:int|None, keepdims:bool=False) -> Tensor:
+    def max(self, axis:int|None = None, keepdims:bool = False) -> Tensor:
         return Tensor(np.max(self.data, axis=axis, keepdims=keepdims))
 
-    def min(self, axis:int|None, keepdims:bool=False) -> Tensor:
+    def min(self, axis:int|None = None, keepdims:bool = False) -> Tensor:
         return Tensor(np.min(self.data, axis=axis, keepdims=keepdims))

@@ -4,10 +4,7 @@ from core.tensor import Tensor
 
 class ReLU(Layer):
     def forward(self, x: Tensor, **_) -> Tensor:
-        """
-        Apply ReLU: max(0, x)
-        Cost: 1x (Baseline)
-        """
+        """Apply ReLU: max(0, x)"""
         return Tensor(np.maximum(0, x.data))
     
     def __name__(self):

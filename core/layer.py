@@ -12,7 +12,7 @@ class Layer:
     def __repr__(self):
         return f"{self.__name__()}=({self.args}, {self.kwargs})"
     
-    def forward(selx, x: Tensor, *args, **kwargs) -> Tensor:
+    def forward(selx, x: Tensor, *_, **__) -> Tensor:
         """Compute layer output"""
         raise NotImplementedError
     
@@ -69,7 +69,6 @@ class Dropout(Layer):
         self.p = p
 
     def forward(self, x, training=True, **_):
-        print(training)
         if not training: 
             return x
 

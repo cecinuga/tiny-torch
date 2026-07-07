@@ -1,6 +1,8 @@
+from pathlib import Path
 import random
 import numpy as np
 from typing import override
+from core.load.utils import load_jpeg
 from core.tensor import Tensor
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
@@ -27,12 +29,25 @@ class TensorDataset(Dataset):
 
     @override
     def __len__(self) -> int:
-        return sum(len(t.data) for t in self.tensors)
+        return len(self.tensors)
 
     @override
     def __getitem__(self, idx: int):
         # Return tuple of slices wrapped in Tensor
         return tuple(Tensor(t.data[idx]) for t in self.tensors)
+
+class ImageDataset(Dataset):
+    def __init__(self, image_paths: list[str|Path], labels):
+        self.image_paths: list[str|Path] = image_paths
+        self.labels = labels
+
+    def __len__(self):
+        return len(self.image_paths)
+
+    def __getitem__(self, idx: int) -> tuple[Tensor, Tensor]:
+        # Load image only when requested
+        image = load_jpeg(self.image_paths[idx])
+        return Tensor(image), Tensor(self.labels[idx])
 
 class DataLoader:
     def __init__(self, dataset: Dataset, batch_size: int, shuffle: bool = False):

@@ -27,6 +27,10 @@ class MSELoss:
 
        return Tensor(mse)
 
+    def __call__(self, predictions: Tensor, targets: Tensor) -> Tensor:
+        return self.forward(predictions, targets)
+
+
 class CrossEntropyLoss:
     def forward(self, logits: Tensor, targets: Tensor) -> Tensor:
         # 1. Apply stable log_softmax
@@ -43,6 +47,9 @@ class CrossEntropyLoss:
         cross_entropy = -np.mean(selected_log_probs)
         return Tensor(cross_entropy)
 
+    def __call__(self, logits: Tensor, targets: Tensor) -> Tensor:
+        return self.forward(logits, targets)
+
 class BinaryCrossEntropyLoss:
     def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
         # 1. Clip to prevent log(0) -> NaN
@@ -55,3 +62,6 @@ class BinaryCrossEntropyLoss:
 
         binary_cross_entropy = -np.mean(term_1 + term_2)
         return Tensor(binary_cross_entropy)
+
+    def __call__(self, predictions: Tensor, targets: Tensor) -> Tensor:
+        return self.forward(predictions, targets)

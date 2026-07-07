@@ -1,4 +1,9 @@
+import random
+import numpy as np
+from typing import override
+from core.tensor import Tensor
 from abc import ABC, abstractmethod
+from collections.abc import Iterator
 
 class Dataset(ABC):
     """Abstract base class for all datasets."""
@@ -9,6 +14,50 @@ class Dataset(ABC):
         pass
 
     @abstractmethod
-    def __getitem__(self, idx: int):
+    def __getitem__(self, idx: int) -> tuple[Tensor, ...]:
         """Return the sample at the given index."""
         pass
+
+class TensorDataset(Dataset):
+    def __init__(self, *tensors: Tensor):
+        # Validate all tensor have same size in dim 0
+        first_size = len(tensors[0].data)
+        assert all(len(t.data) == first_size for t in tensors) # Verify homogeneous data
+        self.tensors = tensors
+
+    @override
+    def __len__(self) -> int:
+        return sum(len(t.data) for t in self.tensors)
+
+    @override
+    def __getitem__(self, idx: int):
+        # Return tuple of slices wrapped in Tensor
+        return tuple(Tensor(t.data[idx]) for t in self.tensors)
+
+class DataLoader:
+    def __init__(self, dataset: Dataset, batch_size: int, shuffle: bool = False):
+        self.dataset:Dataset = dataset
+        self.batch_size:int = batch_size
+        self.shuffle:bool = shuffle
+
+    def __iter__(self) -> Iterator[tuple[Tensor, ...]]:
+        indices = list(range(len(self.dataset)))
+        if self.shuffle:
+            random.shuffle(indices)
+
+        # Chunk the indices list
+        for i in range(0, len(indices), self.batch_size):
+            batch_indices = indices[i:i + self.batch_size]
+            batch = [self.dataset[idx] for idx in batch_indices]
+            yield self._collate_batch(batch)
+
+    def _collate_batch(self, batch: list[tuple[Tensor, ...]]) -> tuple[Tensor, ...]:
+        num_tensors = len(batch[0]) # e.g., 2 for (features, labels)
+        batched_tensors: list[Tensor] = []
+
+        for i in range(num_tensors):
+            tensor_list = [sample[i].data for sample in batch]
+            stacked = np.stack(tensor_list, axis=0)
+            batched_tensors.append(Tensor(stacked))
+
+        return tuple(batched_tensors)

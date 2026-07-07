@@ -1,19 +1,28 @@
-from typing import override, Any
+from abc import ABC, abstractmethod
+from typing import override
 import numpy as np
 from core.tensor import Tensor
 
-class Layer:
+class ALayer(ABC):
+    @abstractmethod
+    def forward(self, *_, **__) -> Tensor:
+        pass
+
+    @property
+    @abstractmethod
+    def parameters(self) -> list[Tensor]:
+        pass
+
+class Layer(ALayer):
     def __init__(self, *args, **kwargs):
         self.args = args
         self.kwargs = kwargs
 
-    @property
-    def __name__(self) -> str:
-        return "Layer"
-
+    @override
     def __repr__(self) -> str:
-        return f"{self.__name__}=({self.args}, {self.kwargs})"
+        return f"{type(self).__name__}=({self.args}, {self.kwargs})"
 
+    @override
     def forward(self, x: Tensor, *_, **__) -> Tensor:
         """Compute layer output"""
         raise NotImplementedError
@@ -22,6 +31,7 @@ class Layer:
         return self.forward(x, *args, **kwargs)
 
     @property
+    @override
     def parameters(self) -> list[Tensor]:
         """Return list of trainable parameters"""
         return []
@@ -41,13 +51,8 @@ class Linear(Layer):
         else:
             self.bias = None
 
-    @property
     @override
-    def __name__(self):
-        return "Linear"
-
-    @override
-    def forward(self, x: Tensor, **_):
+    def forward(self, x: Tensor, *_, **__) -> Tensor:
         """Compute the layer output: y = xW + b"""
         # 1. Matrix multiplication
         output = x.matmul(self.weight)
@@ -75,7 +80,7 @@ class Dropout(Layer):
         self.p = p
 
     @override
-    def forward(self, x: Tensor, training:bool=True, **_) -> Tensor:
+    def forward(self, x: Tensor, training:bool=True, *_, **__) -> Tensor:
         if not training:
             return x
 
@@ -89,18 +94,13 @@ class Dropout(Layer):
         # 3. Apply
         return x * Tensor(mask) * Tensor(scale)
 
-    @property
-    @override
-    def __name__(self):
-        return "Dropout"
-
 class Sequential(Layer):
     def __init__(self, *layers: Layer):
         super().__init__(layers)
         self.layers: list[Layer] = list(layers)
 
     @override
-    def forward(self, x: Tensor, **kwargs) -> Tensor:
+    def forward(self, x: Tensor, *_, **kwargs) -> Tensor:
         for i, layer in enumerate(self.layers):
             try:
                 x = layer(x, **kwargs)

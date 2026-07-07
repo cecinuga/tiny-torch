@@ -1,11 +1,11 @@
-from typing import override
+from typing import override, Any
 import numpy as np
 
 class Tensor:
     def __init__(self, data, requires_grad:bool=True):
         if isinstance(data, (list, tuple)) and len(data) > 0 and isinstance(data[0], Tensor):
             data = np.stack([t.data for t in data])
-        self.data = np.array(data, dtype=np.float32)
+        self.data: np.ndarray = np.array(data, dtype=np.float32)
         self.shape = self.data.shape
         self.size = self.data.size
         self.dtype = self.data.dtype

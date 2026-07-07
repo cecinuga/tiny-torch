@@ -3,43 +3,27 @@ from typing import override
 import numpy as np
 from core.tensor import Tensor
 
-class ALayer(ABC):
+class Layer(ABC):
     @abstractmethod
-    def forward(self, *_, **__) -> Tensor:
-        pass
-
-    @property
-    @abstractmethod
-    def parameters(self) -> list[Tensor]:
-        pass
-
-class Layer(ALayer):
-    def __init__(self, *args, **kwargs):
-        self.args = args
-        self.kwargs = kwargs
-
-    @override
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}=({self.args}, {self.kwargs})"
-
-    @override
-    def forward(self, x: Tensor, *_, **__) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         """Compute layer output"""
         raise NotImplementedError
 
-    def __call__(self, x: Tensor, *args, **kwargs) -> Tensor:
-        return self.forward(x, *args, **kwargs)
+    def __call__(self, x: Tensor) -> Tensor:
+        return self.forward(x)
 
     @property
-    @override
     def parameters(self) -> list[Tensor]:
-        """Return list of trainable parameters"""
         return []
+
+    @override
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}()"
 
 class Linear(Layer):
     def __init__(self, in_feature:int, out_feature:int, bias:bool=True):
-        super().__init__(in_feature, out_feature, bias)
         self.in_feature = in_feature
+        self.out_feature = out_feature
 
         # Xavier initialization
         scale = np.sqrt(1.0 / in_feature)
@@ -50,6 +34,10 @@ class Linear(Layer):
             self.bias = Tensor(np.zeros(out_feature))
         else:
             self.bias = None
+
+    @override
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}(in_feature={self.in_feature}, out_feature={self.out_feature}, bias={self.bias})"
 
     @override
     def forward(self, x: Tensor, *_, **__) -> Tensor:
@@ -75,9 +63,8 @@ class Linear(Layer):
         return params
 
 class Dropout(Layer):
-    def __init__(self, p=0.5):
-        super().__init__(p=0.5)
-        self.p = p
+    def __init__(self, p:float=0.5):
+        self.p:float = p
 
     @override
     def forward(self, x: Tensor, training:bool=True, *_, **__) -> Tensor:
@@ -94,18 +81,23 @@ class Dropout(Layer):
         # 3. Apply
         return x * Tensor(mask) * Tensor(scale)
 
+    @override
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}(p={self.p})"
+
+
 class Sequential(Layer):
     def __init__(self, *layers: Layer):
-        super().__init__(layers)
         self.layers: list[Layer] = list(layers)
 
     @override
-    def forward(self, x: Tensor, *_, **kwargs) -> Tensor:
-        for i, layer in enumerate(self.layers):
-            try:
-                x = layer(x, **kwargs)
-            except Exception as e:
-                raise Exception(f"layer {i}: {layer}", e)
+    def __repr__(self) -> str:
+        return f"Sequential=({[l for l in self.layers]})"
+
+    @override
+    def forward(self, x: Tensor) -> Tensor:
+        for layer in self.layers:
+            x = layer(x)
         return x
 
     @property

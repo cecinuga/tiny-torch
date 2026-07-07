@@ -1,3 +1,4 @@
+from typing import override
 import numpy as np
 
 class Tensor:
@@ -10,10 +11,12 @@ class Tensor:
         self.dtype = self.data.dtype
         self.requires_grad = True
 
-    def __repr__(self):
+    @override
+    def __repr__(self) -> str:
         return f"Tensor=(shape={self.shape}, size={self.size}, dtype={self.dtype})"
 
-    def __str__(self):
+    @override
+    def __str__(self) -> str:
         return f"Tensor({self.data})"
 
     def numpy(self):

@@ -27,7 +27,7 @@ class Layer:
         return []
 
 class Linear(Layer):
-    def __init__(self, in_feature:int, out_feature:int, bias=True):
+    def __init__(self, in_feature:int, out_feature:int, bias:bool=True):
         super().__init__(in_feature, out_feature, bias)
         self.in_feature = in_feature
 

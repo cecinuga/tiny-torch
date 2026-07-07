@@ -75,7 +75,7 @@ class Dropout(Layer):
         self.p = p
 
     @override
-    def forward(self, x, training:bool=True, **_) -> Tensor:
+    def forward(self, x: Tensor, training:bool=True, **_) -> Tensor:
         if not training:
             return x
 
@@ -100,7 +100,7 @@ class Sequential(Layer):
         self.layers: list[Layer] = list(layers)
 
     @override
-    def forward(self, x, **kwargs) -> Tensor:
+    def forward(self, x: Tensor, **kwargs) -> Tensor:
         for i, layer in enumerate(self.layers):
             try:
                 x = layer(x, **kwargs)

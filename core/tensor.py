@@ -1,6 +1,6 @@
-from core.autograd import Function
-from typing import override
 import numpy as np
+from typing import override
+from core.autograd import Function, AddBackward, SubBackward, MulBackward, MatmulBackward, ReshapeBackward, TransposeBackward
 
 class Tensor:
     def __init__(self, data, requires_grad:bool=True):
@@ -10,7 +10,7 @@ class Tensor:
         self.shape = self.data.shape
         self.size = self.data.size
         self.dtype = self.data.dtype
-        self.requires_grad = True
+        self.requires_grad:bool = requires_grad
         self.grad: np.ndarray|None = None
         self._grad_fn: Function|None = None
 
@@ -30,17 +30,23 @@ class Tensor:
 
     def __add__(self, other: Tensor | np.ndarray | float):
         if isinstance(other, Tensor):
-            return Tensor(self.data + other.data)
+            out = Tensor(self.data + other.data)
+            out._grad_fn = AddBackward(self, other)
+            return out
         return Tensor(self.data + other)
 
     def __sub__(self, other: Tensor | np.ndarray | float):
         if isinstance(other, Tensor):
-            return Tensor(self.data - other.data)
+            out = Tensor(self.data - other.data)
+            out._grad_fn = SubBackward(self, other)
+            return out
         return Tensor(self.data - other)
 
     def __mul__(self, other: Tensor | np.ndarray | float):
         if isinstance(other, Tensor):
-            return Tensor(self.data * other.data)
+            out = Tensor(self.data * other.data)
+            out._grad_fn = MulBackward(self, other)
+            return out
         return Tensor(self.data * other)
 
     def __pow__(self, other: float):
@@ -62,8 +68,12 @@ class Tensor:
                     f"inner dimension must match: {self.shape[-1]} != {other.shape[-2]}"
                 )
 
-        result_data = np.matmul(self.data, other.data)
-        return Tensor(result_data)
+        out = np.matmul(self.data, other.data)
+        if isinstance(other, Tensor):
+            out._grad_fn = MatmulBackward(self, other)
+            return out
+
+        return Tensor(out)
 
     def reshape(self, *shape) -> Tensor:
         if len(shape) == 1 and isinstance(shape[0], (tuple, list)):
@@ -90,14 +100,18 @@ class Tensor:
                 f"[x] Reshape preserves data, so total elements must stay the same\n"+
                 f"[x] Use -1 to infer a dimension: reshape(-1, {new_shape[-1] if len(new_shape) > 0 else 1}) lets NumPy calculate"
             )
-
         reshaped_data = np.reshape(self.data, new_shape)
-        return Tensor(reshaped_data)
+        out = Tensor(reshaped_data)
+        out._grad_fn = ReshapeBackward(self)
+
+        return out
 
     def transpose(self):
         new_shape = list(self.shape)
         new_shape.reverse()
-        return self.reshape(new_shape)
+        out =  self.reshape(new_shape)
+        out._grad_fn = TransposeBackward(self)
+        return out
 
     def sum(self, axis:int|None=None, keepdims:bool = False) -> Tensor:
         return Tensor(np.sum(self.data, axis=axis, keepdims=keepdims))
@@ -131,9 +145,9 @@ class Tensor:
             grads = self._grad_fn.apply(gradient)
 
             for tensor, grad in zip(self._grad_fn.saved_tensors, grads):
-                if isinstance(tensor, Tensor) and tensor.requires_grad and grad is not None:
-                    tensor.backward()
-
-
+                if tensor.requires_grad:
+                    tensor.backward(grad)
 
     def zero_grad(self) -> None:
+        """Reset gradients to None."""
+        self.grad = None

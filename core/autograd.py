@@ -2,7 +2,7 @@ from typing import override
 import numpy as np
 from core.tensor import Tensor
 
-def enable_autograd(quiet=False) -> None:
+def enable_autograd(quiet:bool=False) -> None:
     pass
 
 class Function:
@@ -10,7 +10,7 @@ class Function:
         # The Memory Cost
         self.saved_tensors:tuple[Tensor, ...] = tensors
         # The Graph Structure
-        self.next_functions = []
+        self.next_functions:list[Function] = []
 
     def apply(self, grad_output: np.ndarray)-> tuple[np.ndarray, ...]:
         """Compute gradients for the inputs."""

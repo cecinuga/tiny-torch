@@ -1,4 +1,5 @@
-from typing import override, Any
+from core.autograd import Function
+from typing import override
 import numpy as np
 
 class Tensor:
@@ -10,6 +11,8 @@ class Tensor:
         self.size = self.data.size
         self.dtype = self.data.dtype
         self.requires_grad = True
+        self.grad: np.ndarray|None = None
+        self._grad_fn: Function|None = None
 
     @override
     def __repr__(self) -> str:
@@ -21,6 +24,9 @@ class Tensor:
 
     def numpy(self):
         return self.data
+
+    def __neg__(self):
+        return Tensor(-self.data)
 
     def __add__(self, other: Tensor | np.ndarray | float):
         if isinstance(other, Tensor):
@@ -36,6 +42,9 @@ class Tensor:
         if isinstance(other, Tensor):
             return Tensor(self.data * other.data)
         return Tensor(self.data * other)
+
+    def __pow__(self, other: float):
+        return Tensor(self.data**other)
 
     def __matmul__(self, other: Tensor | np.ndarray):
         return self.matmul(other)
@@ -101,3 +110,30 @@ class Tensor:
 
     def min(self, axis:int|None = None, keepdims:bool = False) -> Tensor:
         return Tensor(np.min(self.data, axis=axis, keepdims=keepdims))
+
+    def backward(self, gradient:np.ndarray|None=None):
+        """Compute gradients via backpropagation"""
+        if not self.requires_grad:
+            return
+
+        # Initialize gradient for scalar outputs
+        if gradient is None:
+            if self.data.size == 1:
+                gradient = np.ones_like(self.data)
+            else:
+                raise ValueError("backward() requires gradient for non-scalar")
+
+        if self.grad is None:
+            self.grad = np.zeros_like(self.data)
+        self.grad += gradient
+
+        if self._grad_fn is not None:
+            grads = self._grad_fn.apply(gradient)
+
+            for tensor, grad in zip(self._grad_fn.saved_tensors, grads):
+                if isinstance(tensor, Tensor) and tensor.requires_grad and grad is not None:
+                    tensor.backward()
+
+
+
+    def zero_grad(self) -> None:

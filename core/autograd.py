@@ -1,6 +1,9 @@
+from __future__ import annotations
 import numpy as np
-from typing import override
-from core.tensor import Tensor
+from typing import TYPE_CHECKING, override
+
+if TYPE_CHECKING:
+    from core.tensor import Tensor
 
 def enable_autograd(quiet:bool=False) -> None:
     pass

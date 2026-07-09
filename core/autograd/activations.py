@@ -1,6 +1,5 @@
 from core.tensor import Tensor
 from core.activations import Sigmoid
-import numpy as np
 from typing import override
 from core.autograd.base import Function
 

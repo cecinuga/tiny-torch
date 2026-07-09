@@ -9,10 +9,6 @@ class ReLU(Layer):
         """Apply ReLU: max(0, x)"""
         return Tensor(np.maximum(0, x.data))
 
-    @property
-    @override
-    def __name__(self):
-        return "ReLU"
 
 class Sigmoid(Layer):
     @override
@@ -40,10 +36,6 @@ class Tanh(Layer):
         # Relies on Numpy's internal optimization
         return Tensor(np.tanh(x.data))
 
-    @property
-    @override
-    def __name__(self):
-        return "Tanh"
 
 class GELU(Layer):
     @override
@@ -52,10 +44,6 @@ class GELU(Layer):
         # 1.702 is derived from sqrt(2/pi)
         return Sigmoid()(x * 1.702) * x
 
-    @property
-    @override
-    def __name__(self):
-        return "GELU"
 
 class Softmax(Layer):
     @override
@@ -70,8 +58,3 @@ class Softmax(Layer):
         # 3. Normalize
         exp_sum = np.sum(exp_values, axis=dim, keepdims=True)
         return Tensor(exp_values / exp_sum)
-
-    @property
-    @override
-    def __name__(self) -> str:
-        return "Softmax"

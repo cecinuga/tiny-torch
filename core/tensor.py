@@ -28,52 +28,52 @@ class Tensor:
     def __neg__(self):
         return Tensor(-self.data)
 
-    def __add__(self, other: Tensor | np.ndarray | float):
+    def __add__(self, other: Tensor | np.ndarray | float) -> Tensor:
         if isinstance(other, Tensor):
             out = Tensor(self.data + other.data)
             out._grad_fn = AddBackward(self, other)
             return out
         return Tensor(self.data + other)
 
-    def __sub__(self, other: Tensor | np.ndarray | float):
+    def __sub__(self, other: Tensor | np.ndarray | float) -> Tensor:
         if isinstance(other, Tensor):
             out = Tensor(self.data - other.data)
             out._grad_fn = SubBackward(self, other)
             return out
         return Tensor(self.data - other)
 
-    def __rsub__(self, other: np.ndarray | float):
+    def __rsub__(self, other: np.ndarray | float) -> Tensor:
         if isinstance(other, np.ndarray):
-            return other - self.data
+            return Tensor(other - self.data)
         return Tensor(-self.data + 1)
 
-    def __mul__(self, other: Tensor | np.ndarray | float):
+    def __mul__(self, other: Tensor | np.ndarray | float) -> Tensor:
         if isinstance(other, Tensor):
             out = Tensor(self.data * other.data)
             out._grad_fn = MulBackward(self, other)
             return out
         return Tensor(self.data * other)
 
-    def __pow__(self, other: float):
+    def __pow__(self, other: float) -> Tensor:
         return Tensor(self.data**other)
 
-    def __matmul__(self, other: Tensor | np.ndarray):
+    def __matmul__(self, other: Tensor | np.ndarray) -> Tensor:
         return self.matmul(other)
 
-    def __truediv__(self, other:Tensor | np.ndarray):
+    def __truediv__(self, other:Tensor | np.ndarray) -> Tensor:
         if isinstance(other, Tensor):
             return Tensor(self.data / other.data)
         return Tensor(self.data / other)
 
-    def __gt__(self, other: Tensor | np.ndarray | float):
+    def __gt__(self, other: Tensor | np.ndarray | float) -> Tensor:
         if isinstance(other, Tensor) or isinstance(other, np.ndarray) and not other.shape == self.shape:
             raise ValueError(f"cannot perform comparison, shape must be equal: {self.shape} != {other.shape}")
 
         if isinstance(other, Tensor):
-            return self.data > other.data
+            return Tensor(self.data > other.data)
         if isinstance(other, np.ndarray):
-            return self.data > other
-        return self.data > other
+            return Tensor(self.data > other)
+        return Tensor(self.data > other)
 
     def matmul(self, other: Tensor | np.ndarray) -> Tensor:
         if len(self.shape) >= 2 and len(other.shape) >= 2:
@@ -140,7 +140,7 @@ class Tensor:
     def min(self, axis:int|None = None, keepdims:bool = False) -> Tensor:
         return Tensor(np.min(self.data, axis=axis, keepdims=keepdims))
 
-    def backward(self, gradient:np.ndarray|None=None):
+    def backward(self, gradient:Tensor|None=None):
         """Compute gradients via backpropagation"""
         if not self.requires_grad:
             return
@@ -148,7 +148,7 @@ class Tensor:
         if gradient is None:
             # Initialize gradient for scalar outputs
             if self.data.size == 1:
-                gradient = np.ones_like(self.data)
+                gradient = Tensor(np.ones_like(self.data))
             else:
                 raise ValueError("backward() requires gradient for non-scalar")
 

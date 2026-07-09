@@ -1,3 +1,4 @@
+from core.autograd.activations import ReLUBackward
 from typing import override
 import numpy as np
 from core.layer import Layer
@@ -5,14 +6,16 @@ from core.tensor import Tensor
 
 class ReLU(Layer):
     @override
-    def forward(self, x: Tensor, **_) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         """Apply ReLU: max(0, x)"""
-        data = np.maximum(0, x.data)
-        return Tensor(np.maximum(0, x.data))
+        out = Tensor(np.maximum(0, x.data))
+        out._grad_fn = ReLUBackward(x)
+
+        return out
 
 class Sigmoid(Layer):
     @override
-    def forward(self, x: Tensor, **_) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         # 1. Clip to prevent raw overflow
         z = np.clip(x.data, -500, 500)
 
@@ -32,14 +35,14 @@ class Sigmoid(Layer):
 
 class Tanh(Layer):
     @override
-    def forward(self, x: Tensor, **_) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         # Relies on Numpy's internal optimization
         return Tensor(np.tanh(x.data))
 
 
 class GELU(Layer):
     @override
-    def forward(self, x: Tensor, **_) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         # Approximation: x + sigmoid(1.702 * x)
         # 1.702 is derived from sqrt(2/pi)
         return Sigmoid()(x * 1.702) * x

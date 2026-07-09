@@ -42,6 +42,11 @@ class Tensor:
             return out
         return Tensor(self.data - other)
 
+    def __rsub__(self, other: np.ndarray | float):
+        if isinstance(other, np.ndarray):
+            return other - self.data
+        return Tensor(-self.data + 1)
+
     def __mul__(self, other: Tensor | np.ndarray | float):
         if isinstance(other, Tensor):
             out = Tensor(self.data * other.data)

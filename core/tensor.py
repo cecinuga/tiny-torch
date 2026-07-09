@@ -151,3 +151,10 @@ class Tensor:
     def zero_grad(self) -> None:
         """Reset gradients to None."""
         self.grad = None
+
+    def destroy_graph(self) -> None:
+        """Destroy the operations graph"""
+        if self._grad_fn is not None:
+            for t in self._grad_fn.saved_tensors:
+                t.destroy_graph()
+            self._grad_fn = None

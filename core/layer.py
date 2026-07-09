@@ -40,7 +40,7 @@ class Linear(Layer):
         return f"{type(self).__name__}(in_feature={self.in_feature}, out_feature={self.out_feature}, bias={self.bias})"
 
     @override
-    def forward(self, x: Tensor, *_, **__) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         """Compute the layer output: y = xW + b"""
         # 1. Matrix multiplication
         output = x.matmul(self.weight)
@@ -67,7 +67,7 @@ class Dropout(Layer):
         self.p:float = p
 
     @override
-    def forward(self, x: Tensor, training:bool=True, *_, **__) -> Tensor:
+    def forward(self, x: Tensor, training:bool=True) -> Tensor:
         if not training:
             return x
 

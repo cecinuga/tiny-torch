@@ -7,8 +7,8 @@ class ReLU(Layer):
     @override
     def forward(self, x: Tensor, **_) -> Tensor:
         """Apply ReLU: max(0, x)"""
+        data = np.maximum(0, x.data)
         return Tensor(np.maximum(0, x.data))
-
 
 class Sigmoid(Layer):
     @override

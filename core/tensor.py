@@ -60,6 +60,16 @@ class Tensor:
             return Tensor(self.data / other.data)
         return Tensor(self.data / other)
 
+    def __gt__(self, other: Tensor | np.ndarray | float):
+        if isinstance(other, Tensor) or isinstance(other, np.ndarray) and not other.shape == self.shape:
+            raise ValueError(f"cannot perform comparison, shape must be equal: {self.shape} != {other.shape}")
+
+        if isinstance(other, Tensor):
+            return self.data > other.data
+        if isinstance(other, np.ndarray):
+            return self.data > other
+        return self.data > other
+
     def matmul(self, other: Tensor | np.ndarray) -> Tensor:
         if len(self.shape) >= 2 and len(other.shape) >= 2:
             if self.shape[-1] != other.shape[-2]:
@@ -130,8 +140,8 @@ class Tensor:
         if not self.requires_grad:
             return
 
-        # Initialize gradient for scalar outputs
         if gradient is None:
+            # Initialize gradient for scalar outputs
             if self.data.size == 1:
                 gradient = np.ones_like(self.data)
             else:

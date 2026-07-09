@@ -1,29 +1,12 @@
-from __future__ import annotations
+from typing import override
+from core.autograd.base import Function
 import numpy as np
-from typing import TYPE_CHECKING, override
-
-if TYPE_CHECKING:
-    from core.tensor import Tensor
-
-def enable_autograd(quiet:bool=False) -> None:
-    pass
-
-class Function:
-    def __init__(self, *tensors: Tensor):
-        # The Memory Cost
-        self.saved_tensors:tuple[Tensor, ...] = tensors
-        # The Graph Structure
-        self.next_functions:list[Function|None] = [t._grad_fn for t in tensors]
-
-    def apply(self, grad_output: np.ndarray)-> tuple[np.ndarray, ...]:
-        """Compute gradients for the inputs."""
-        raise NotImplementedError()
 
 class AddBackward(Function):
     """Gradient computation for addition."""
 
     @override
-    def apply(self, grad_output:np.ndarray=[])-> tuple[np.ndarray, np.ndarray]:
+    def apply(self, grad_output:np.ndarray)-> tuple[np.ndarray, np.ndarray]:
         # Gradient flows equally to both inputs
         # 1 * grad_output
         return grad_output, grad_output
@@ -32,7 +15,7 @@ class SubBackward(Function):
     """Gradient computation for subtraction."""
 
     @override
-    def apply(self, grad_output:np.ndarray=[]) -> tuple[np.ndarray, np.ndarray]:
+    def apply(self, grad_output:np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         # Gradient flows equally to both inputs
         # 1 * grad_output
         return grad_output, grad_output
@@ -41,7 +24,7 @@ class MulBackward(Function):
     """Gradient computation for multiplication."""
 
     @override
-    def apply(self, grad_output:np.ndarray=[]) -> tuple[np.ndarray, np.ndarray]:
+    def apply(self, grad_output:np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         a, b = self.saved_tensors
         grad_a = grad_b = np.array([])
 
@@ -57,7 +40,7 @@ class DivBackward(Function):
     """Gradient computation for division."""
 
     @override
-    def apply(self, grad_output:np.ndarray=[]) -> tuple[np.ndarray, np.ndarray]:
+    def apply(self, grad_output:np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         a, b = self.saved_tensors
         grad_a = grad_b = np.array([])
 
@@ -73,7 +56,7 @@ class MatmulBackward(Function):
     """Gradient computation for matrix multiplication."""
 
     @override
-    def apply(self, grad_output:np.ndarray=[]) -> tuple[np.ndarray, np.ndarray]:
+    def apply(self, grad_output:np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         a, b = self.saved_tensors
         grad_a = grad_b = np.array([])
 
@@ -92,14 +75,14 @@ class SumBackward(Function):
     """Gradient computation for sum reduction."""
 
     @override
-    def apply(self, grad_output:np.ndarray=[]) -> tuple[np.ndarray, ...]:
+    def apply(self, grad_output:np.ndarray) -> tuple[np.ndarray, ...]:
         return grad_output,
 
 class ReshapeBackward(Function):
     """Gradient computation for reshape operation."""
 
     @override
-    def apply(self, grad_output:np.ndarray=[]) -> tuple[np.ndarray, ...]:
+    def apply(self, grad_output:np.ndarray) -> tuple[np.ndarray, ...]:
         a, = self.saved_tensors
         if a.requires_grad:
             return grad_output.reshape(a.shape),
@@ -109,14 +92,5 @@ class TransposeBackward(Function):
     """Gradient computation for transpose."""
 
     @override
-    def apply(self, grad_output:np.ndarray=[]) -> tuple[np.ndarray, ...]:
+    def apply(self, grad_output:np.ndarray) -> tuple[np.ndarray, ...]:
         return grad_output.transpose(),
-
-class ReLUBackward(Function):
-    """Gradient computation for ReLU activation."""
-
-    @override
-    def apply(self, grad_output:np.ndarray=[]) -> tuple[np.ndarray, ...]:
-        for t in self.saved_tensors:
-            grad_output = grad_output * (t > 0)
-        return grad_output

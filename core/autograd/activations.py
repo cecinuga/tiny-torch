@@ -49,9 +49,13 @@ class GELUBackward(Function):
 class SoftmaxBackward(Function):
     """Gradient computation for Softmax activation."""
 
+    def __init__(self, x: Tensor, dim:int):
+        super().__init__(x)
+        self.dim:int = dim
+
     @override
     def apply(self, grad_output:Tensor) -> tuple[Tensor, ...]:
         t, = self.saved_tensors
         s = softmax(t.data)
-        dot = np.sum(grad_output.data*s, axis=-1, keepdims=True)
+        dot = np.sum(grad_output.data*s, axis=self.dim, keepdims=True)
         return Tensor(s * (grad_output.data - dot)),

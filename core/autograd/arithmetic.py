@@ -30,10 +30,10 @@ class MulBackward(Function):
         grad_a = grad_b = np.array([])
 
         if a.requires_grad:
-            grad_a = grad_output * b.data
+            grad_a = grad_output.data * b.data
 
         if b.requires_grad:
-            grad_b = grad_output * a.data
+            grad_b = grad_output.data * a.data
 
         return Tensor(grad_a), Tensor(grad_b)
 

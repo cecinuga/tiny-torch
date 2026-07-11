@@ -19,7 +19,7 @@ class SubBackward(Function):
     def apply(self, grad_output: Tensor) -> tuple[Tensor, Tensor]:
         # Gradient flows equally to both inputs
         # 1 * grad_output
-        return grad_output, grad_output
+        return grad_output, -grad_output
 
 class MulBackward(Function):
     """Gradient computation for multiplication."""

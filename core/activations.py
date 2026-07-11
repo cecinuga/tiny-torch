@@ -1,7 +1,5 @@
 from core.functions import relu, sigmoid, tanh, gelu, softmax
-from core.autograd import ReLUBackward
 from typing import override
-import numpy as np
 from core.layer import Layer
 from core.tensor import Tensor
 

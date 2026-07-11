@@ -10,9 +10,9 @@ class ReLUBackward(Function):
     @override
     def apply(self, grad_output:Tensor) -> tuple[Tensor, ...]:
         t, = self.saved_tensors
-        local_grad = (t > 0)
+        local_grad = (t.data > 0)
 
-        return Tensor(grad_output.data * local_grad.data),
+        return Tensor(grad_output.data * local_grad),
 
 class SigmoidBackward(Function):
     """Gradient computation for Sigmoid activation."""

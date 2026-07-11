@@ -10,7 +10,7 @@ class AddBackward(Function):
     @override
     def apply(self, grad_output: Tensor)-> tuple[Tensor, Tensor]:
         a, b = self.saved_tensors
-        grad_a = grad_b = grad_output
+        grad_a = grad_b = np.array([])
 
         if a.requires_grad:
             grad_a = unbroadcast(grad_output.data, a.shape)
@@ -25,7 +25,7 @@ class SubBackward(Function):
     @override
     def apply(self, grad_output: Tensor) -> tuple[Tensor, Tensor]:
         a, b = self.saved_tensors
-        grad_a = grad_b = grad_output
+        grad_a = grad_b = np.array([])
 
         if a.requires_grad:
             grad_a = unbroadcast(grad_output.data, a.shape)
@@ -40,12 +40,12 @@ class MulBackward(Function):
     @override
     def apply(self, grad_output: Tensor) -> tuple[Tensor, Tensor]:
         a, b = self.saved_tensors
-        grad_a = grad_b = grad_output
+        grad_a = grad_b = np.array([])
 
         if a.requires_grad:
-            grad_a = unbroadcast(grad_output.data * b.data, a.shape)
+            grad_a = unbroadcast(grad_output.data * b.data, b.shape)
         if b.requires_grad:
-            grad_b = unbroadcast(grad_output.data * a.data, b.shape)
+            grad_b = unbroadcast(grad_output.data * a.data, a.shape)
 
         return Tensor(grad_a), Tensor(grad_b)
 
@@ -55,12 +55,13 @@ class DivBackward(Function):
     @override
     def apply(self, grad_output: Tensor) -> tuple[Tensor, Tensor]:
         a, b = self.saved_tensors
-        grad_a = grad_b = grad_output
+        grad_a = grad_b = np.array([])
 
+        inv = (1/b.data)
         if a.requires_grad:
-            grad_a = unbroadcast(grad_output.data * (1/b.data), a.shape)
+            grad_a = unbroadcast(grad_output.data * inv, b.shape)
         if b.requires_grad:
-            grad_b = unbroadcast(grad_output.data * -a.data/(b.data**2), b.shape)
+            grad_b = unbroadcast(grad_output.data * -a.data*(inv**2), a.shape)
 
         return Tensor(grad_a), Tensor(grad_b)
 
@@ -70,7 +71,7 @@ class MatmulBackward(Function):
     @override
     def apply(self, grad_output: Tensor) -> tuple[Tensor, Tensor]:
         a, b = self.saved_tensors
-        grad_a = grad_b = grad_output
+        grad_a = grad_b = np.array([])
 
         # Aligns shapes by transposing the partner matrix
         if a.requires_grad:
@@ -94,11 +95,11 @@ class SumBackward(Function):
     @override
     def apply(self, grad_output: Tensor) -> tuple[Tensor, ...]:
         t, = self.saved_tensors
-        grad = grad_output.data
 
         if not t.requires_grad:
-            return grad_output,
+            return Tensor(np.array([])),
 
+        grad = grad_output.data
         if not self.keepdims and self.axis is not None:
             grad = np.expand_dims(grad, self.axis)
 
@@ -110,14 +111,22 @@ class ReshapeBackward(Function):
     @override
     def apply(self, grad_output: Tensor) -> tuple[Tensor, ...]:
         a, = self.saved_tensors
-        if not a.requires_grad:
-            return grad_output,
+        out = np.array([])
 
-        return Tensor(np.reshape(grad_output.data, a.shape)),
+        if a.requires_grad:
+            out = np.reshape(grad_output.data, a.shape),
+
+        return Tensor(out),
 
 class TransposeBackward(Function):
     """Gradient computation for transpose."""
 
     @override
     def apply(self, grad_output: Tensor) -> tuple[Tensor, ...]:
-        return Tensor(np.transpose(grad_output.data)),
+        t, = self.saved_tensors
+        out = np.array([])
+
+        if t.requires_grad:
+            out = np.transpose(grad_output.data),
+
+        return Tensor(out),

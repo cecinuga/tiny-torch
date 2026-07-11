@@ -1,5 +1,5 @@
 from core.tensor import Tensor
-from core.activations import Sigmoid
+from core.activations import Sigmoid, Tanh
 from typing import override
 from core.autograd.base import Function
 
@@ -17,8 +17,29 @@ class SigmoidBackward(Function):
 
     @override
     def apply(self, grad_output:Tensor) -> tuple[Tensor, ...]:
-        s = Sigmoid()
+        f = Sigmoid()
         t = self.saved_tensors[0]
 
-        out = grad_output * (s(t)*s(1-t))
+        out = grad_output * (f(t)*f(1-t))
         return out,
+
+class TanhBackward(Function):
+    """Gradient computation for Tanh activation."""
+
+    @override
+    def apply(self, grad_output:Tensor) -> tuple[Tensor, ...]:
+        f = Tanh()
+        t = self.saved_tensors[0]
+
+        out = grad_output * (1-f(t)**2)
+        return out,
+
+class GELUBackward(Function):
+    """Gradient computation for GELU activation."""
+
+    @override
+    def apply(self, grad_output:Tensor) -> tuple[Tensor, ...]:
+        t = self.saved_tensors[0]
+        s = Sigmoid()(t * 1.702)
+        local_grad = s * (1 + 1.702 * t * (1-s))
+        return grad_output * local_grad,

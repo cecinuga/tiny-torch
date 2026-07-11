@@ -1,6 +1,8 @@
 import numpy as np
-from typing import override
-from core.autograd import Function, AddBackward, SubBackward, MulBackward, MatmulBackward, ReshapeBackward, TransposeBackward, DivBackward
+from typing import override, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from core.autograd import Function
 
 class Tensor:
     def __init__(self, data, requires_grad:bool=True):
@@ -135,7 +137,9 @@ class Tensor:
         return out
 
     def sum(self, axis:int|None=None, keepdims:bool = False) -> Tensor:
-        return Tensor(np.sum(self.data, axis=axis, keepdims=keepdims))
+        out = Tensor(np.sum(self.data, axis=axis, keepdims=keepdims))
+        out._grad_fn = SumBackward(self, axis, keepdims)
+        return out
 
     def mean(self, axis:int|None = None, keepdims:bool = False) -> Tensor:
        return Tensor(np.mean(self.data, axis=axis, keepdims=keepdims))
@@ -160,6 +164,7 @@ class Tensor:
 
         if self.grad is None:
             self.grad = np.zeros_like(self.data)
+        print(self.grad.shape, gradient.data.shape)
         self.grad += gradient.data
 
         if self._grad_fn is not None:
@@ -179,3 +184,10 @@ class Tensor:
             for t in self._grad_fn.saved_tensors:
                 t.destroy_graph()
             self._grad_fn = None
+
+# Imported at the bottom (after Tensor is defined) to break the circular import
+# between core.tensor and the autograd backward classes, which need Tensor at runtime.
+from core.autograd import (
+    Function, AddBackward, SubBackward, MulBackward, MatmulBackward, SumBackward,
+    ReshapeBackward, TransposeBackward, DivBackward,
+)

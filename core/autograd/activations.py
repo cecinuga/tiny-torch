@@ -19,7 +19,8 @@ class SigmoidBackward(Function):
     @override
     def apply(self, grad_output:Tensor) -> tuple[Tensor, ...]:
         t = self.saved_tensors[0]
-        local_grad = (sigmoid(t.data)*sigmoid(1-t.data))
+        s = sigmoid(t.data)
+        local_grad = s*(1-s)
 
         return grad_output * local_grad,
 
@@ -50,5 +51,5 @@ class SoftmaxBackward(Function):
     @override
     def apply(self, grad_output:Tensor) -> tuple[Tensor, ...]:
         t = softmax(self.saved_tensors[0].data)
-        dot = (grad_output*t).sum()
+        dot = (grad_output*t).sum(axis=-1, keepdims=True)
         return t * (grad_output - dot),

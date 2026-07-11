@@ -1,6 +1,6 @@
 import numpy as np
 from typing import override
-from core.autograd import Function, AddBackward, SubBackward, MulBackward, MatmulBackward, ReshapeBackward, TransposeBackward
+from core.autograd import Function, AddBackward, SubBackward, MulBackward, MatmulBackward, ReshapeBackward, TransposeBackward, DivBackward
 
 class Tensor:
     def __init__(self, data, requires_grad:bool=True):
@@ -68,7 +68,9 @@ class Tensor:
 
     def __truediv__(self, other:Tensor | np.ndarray) -> Tensor:
         if isinstance(other, Tensor):
-            return Tensor(self.data / other.data)
+            out = Tensor(self.data / other.data)
+            out._grad_fn = DivBackward(self, other)
+            return out
         return Tensor(self.data / other)
 
     def __gt__(self, other: Tensor | np.ndarray | float) -> Tensor:
@@ -128,9 +130,7 @@ class Tensor:
         return out
 
     def transpose(self):
-        new_shape = list(self.shape)
-        new_shape.reverse()
-        out =  self.reshape(new_shape)
+        out = Tensor(np.transpose(self.data))
         out._grad_fn = TransposeBackward(self)
         return out
 

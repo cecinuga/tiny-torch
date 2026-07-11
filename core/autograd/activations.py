@@ -1,4 +1,4 @@
-from core.functions import sigmoid, tanh
+from core.functions import sigmoid, tanh, softmax
 from core.tensor import Tensor
 from typing import override
 from core.autograd.base import Function
@@ -40,7 +40,7 @@ class GELUBackward(Function):
     def apply(self, grad_output:Tensor) -> tuple[Tensor, ...]:
         t = self.saved_tensors[0]
         s = sigmoid(t.data * 1.702)
-        local_grad = s * (1 + 1.702 * t * (1-s))
+        local_grad: Tensor = s * (1 + 1.702 * t * (1-s))
 
         return grad_output * local_grad,
 
@@ -49,6 +49,6 @@ class SoftmaxBackward(Function):
 
     @override
     def apply(self, grad_output:Tensor) -> tuple[Tensor, ...]:
-        t = self.saved_tensors[0]
+        t = softmax(self.saved_tensors[0])
         dot = (grad_output*t).sum()
         return t * (grad_output - dot),

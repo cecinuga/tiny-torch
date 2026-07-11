@@ -56,6 +56,6 @@ class SoftmaxBackward(Function):
     @override
     def apply(self, grad_output:Tensor) -> tuple[Tensor, ...]:
         t, = self.saved_tensors
-        s = softmax(t.data)
+        s = softmax(t.data, self.dim)
         dot = np.sum(grad_output.data*s, axis=self.dim, keepdims=True)
         return Tensor(s * (grad_output.data - dot)),

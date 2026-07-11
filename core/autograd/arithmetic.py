@@ -43,9 +43,9 @@ class MulBackward(Function):
         grad_a = grad_b = grad_output
 
         if a.requires_grad:
-            grad_a = unbroadcast(grad_output.data * b.data, b.shape)
+            grad_a = unbroadcast(grad_output.data * b.data, a.shape)
         if b.requires_grad:
-            grad_b = unbroadcast(grad_output.data * a.data, a.shape)
+            grad_b = unbroadcast(grad_output.data * a.data, b.shape)
 
         return Tensor(grad_a), Tensor(grad_b)
 
@@ -58,9 +58,9 @@ class DivBackward(Function):
         grad_a = grad_b = grad_output
 
         if a.requires_grad:
-            grad_a = unbroadcast(grad_output.data * (1/b.data), b.shape)
+            grad_a = unbroadcast(grad_output.data * (1/b.data), a.shape)
         if b.requires_grad:
-            grad_b = unbroadcast(grad_output.data * -a.data/(b.data**2), a.shape)
+            grad_b = unbroadcast(grad_output.data * -a.data/(b.data**2), b.shape)
 
         return Tensor(grad_a), Tensor(grad_b)
 

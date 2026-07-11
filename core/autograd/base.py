@@ -1,4 +1,8 @@
-from core.tensor import Tensor
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from core.tensor import Tensor
 
 def enable_autograd(quiet:bool=False) -> None:
     pass

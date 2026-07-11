@@ -1,6 +1,6 @@
 from core.autograd.base import Function
 from core.autograd.activations import ReLUBackward, SigmoidBackward, TanhBackward, GELUBackward, SoftmaxBackward
-from core.autograd.arithmetic import AddBackward, SubBackward, MulBackward, DivBackward, MatmulBackward, ReshapeBackward, TransposeBackward
+from core.autograd.arithmetic import AddBackward, SubBackward, MulBackward, DivBackward, MatmulBackward, SumBackward, ReshapeBackward, TransposeBackward
 
 __all__ = [
     "Function",
@@ -9,6 +9,7 @@ __all__ = [
     "MulBackward",
     "DivBackward",
     "MatmulBackward",
+    "SumBackward",
     "ReshapeBackward",
     "TransposeBackward",
     "ReLUBackward",

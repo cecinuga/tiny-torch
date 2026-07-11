@@ -1,6 +1,7 @@
 import numpy as np
 from typing import override
 from core.tensor import Tensor
+from core.utils import unbroadcast
 from core.autograd.base import Function
 
 class AddBackward(Function):
@@ -8,18 +9,30 @@ class AddBackward(Function):
 
     @override
     def apply(self, grad_output: Tensor)-> tuple[Tensor, Tensor]:
-        # Gradient flows equally to both inputs
-        # 1 * grad_output
-        return grad_output, grad_output
+        a, b = self.saved_tensors
+        grad_a = grad_b = grad_output
+
+        if a.requires_grad:
+            grad_a = unbroadcast(grad_output.data, a.shape)
+        if b.requires_grad:
+            grad_b = unbroadcast(grad_output.data, b.shape)
+
+        return Tensor(grad_a), Tensor(grad_b)
 
 class SubBackward(Function):
     """Gradient computation for subtraction."""
 
     @override
     def apply(self, grad_output: Tensor) -> tuple[Tensor, Tensor]:
-        # Gradient flows equally to both inputs
-        # 1 * grad_output
-        return grad_output, -grad_output
+        a, b = self.saved_tensors
+        grad_a = grad_b = grad_output
+
+        if a.requires_grad:
+            grad_a = unbroadcast(grad_output.data, a.shape)
+        if b.requires_grad:
+            grad_b = unbroadcast(-grad_output.data, b.shape)
+
+        return Tensor(grad_a), Tensor(grad_b)
 
 class MulBackward(Function):
     """Gradient computation for multiplication."""
@@ -27,13 +40,12 @@ class MulBackward(Function):
     @override
     def apply(self, grad_output: Tensor) -> tuple[Tensor, Tensor]:
         a, b = self.saved_tensors
-        grad_a = grad_b = np.array([])
+        grad_a = grad_b = grad_output
 
         if a.requires_grad:
-            grad_a = grad_output.data * b.data
-
+            grad_a = unbroadcast(grad_output.data * b.data, b.shape)
         if b.requires_grad:
-            grad_b = grad_output.data * a.data
+            grad_b = unbroadcast(grad_output.data * a.data, a.shape)
 
         return Tensor(grad_a), Tensor(grad_b)
 
@@ -43,13 +55,12 @@ class DivBackward(Function):
     @override
     def apply(self, grad_output: Tensor) -> tuple[Tensor, Tensor]:
         a, b = self.saved_tensors
-        grad_a = grad_b = np.array([])
+        grad_a = grad_b = grad_output
 
         if a.requires_grad:
-            grad_a = grad_output.data * (1/b.data)
-
+            grad_a = unbroadcast(grad_output.data * (1/b.data), b.shape)
         if b.requires_grad:
-            grad_b = grad_output.data * -a.data/(b.data**2)
+            grad_b = unbroadcast(grad_output.data * -a.data/(b.data**2), a.shape)
 
         return Tensor(grad_a), Tensor(grad_b)
 
@@ -59,7 +70,7 @@ class MatmulBackward(Function):
     @override
     def apply(self, grad_output: Tensor) -> tuple[Tensor, Tensor]:
         a, b = self.saved_tensors
-        grad_a = grad_b = []
+        grad_a = grad_b = grad_output
 
         # Aligns shapes by transposing the partner matrix
         if a.requires_grad:
@@ -75,11 +86,23 @@ class MatmulBackward(Function):
 class SumBackward(Function):
     """Gradient computation for sum reduction."""
 
+    def __init__(self, x: Tensor, axis:int|None = -1, keepdims:bool = True):
+        super().__init__(x)
+        self.axis:int|None = axis
+        self.keepdims:bool = keepdims
+
     @override
     def apply(self, grad_output: Tensor) -> tuple[Tensor, ...]:
         t, = self.saved_tensors
-        res = Tensor(np.broadcast_to(grad_output.data, t.shape))
-        return res,
+        grad = grad_output.data
+
+        if not t.requires_grad:
+            return grad_output,
+
+        if not self.keepdims and self.axis is not None:
+            grad = np.expand_dims(grad, self.axis)
+
+        return Tensor(np.broadcast_to(grad, t.shape)),
 
 class ReshapeBackward(Function):
     """Gradient computation for reshape operation."""
@@ -87,13 +110,14 @@ class ReshapeBackward(Function):
     @override
     def apply(self, grad_output: Tensor) -> tuple[Tensor, ...]:
         a, = self.saved_tensors
-        if a.requires_grad:
-            return grad_output.reshape(a.shape),
-        return Tensor([]),
+        if not a.requires_grad:
+            return grad_output,
+
+        return Tensor(np.reshape(grad_output.data, a.shape)),
 
 class TransposeBackward(Function):
     """Gradient computation for transpose."""
 
     @override
     def apply(self, grad_output: Tensor) -> tuple[Tensor, ...]:
-        return grad_output.transpose(),
+        return Tensor(np.transpose(grad_output.data)),

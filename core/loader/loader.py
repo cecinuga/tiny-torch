@@ -2,7 +2,7 @@ from pathlib import Path
 import random
 import numpy as np
 from typing import override
-from core.load.utils import load_jpeg
+from core.loader.utils import load_jpeg
 from core.tensor import Tensor
 from abc import ABC, abstractmethod
 from collections.abc import Iterator

@@ -46,5 +46,5 @@ class Softmax(Layer):
     @override
     def forward(self, x: Tensor, dim: int = -1) -> Tensor:
         res = Tensor(softmax(x.data, dim))
-        res._grad_fn = SoftmaxBackward(x)
+        res._grad_fn = SoftmaxBackward(x, dim)
         return res

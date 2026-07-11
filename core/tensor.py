@@ -160,7 +160,7 @@ class Tensor:
 
         if self.grad is None:
             self.grad = np.zeros_like(self.data)
-        self.grad += gradient
+        self.grad += gradient.data
 
         if self._grad_fn is not None:
             grads = self._grad_fn.apply(gradient)

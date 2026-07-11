@@ -35,6 +35,9 @@ class Tensor:
             return out
         return Tensor(self.data + other)
 
+    def __radd__(self, other: np.ndarray | float) -> Tensor:
+        return self.__add__(other)
+
     def __sub__(self, other: Tensor | np.ndarray | float) -> Tensor:
         if isinstance(other, Tensor):
             out = Tensor(self.data - other.data)
@@ -46,6 +49,9 @@ class Tensor:
         if isinstance(other, np.ndarray):
             return Tensor(other - self.data)
         return Tensor(-self.data + 1)
+
+    def __rmul__(self, other: np.ndarray | float) -> Tensor:
+        return self.__mul__(other)
 
     def __mul__(self, other: Tensor | np.ndarray | float) -> Tensor:
         if isinstance(other, Tensor):

@@ -54,4 +54,4 @@ class SoftmaxBackward(Function):
         t, = self.saved_tensors
         s = softmax(t.data)
         dot = np.sum(grad_output.data*s, axis=-1, keepdims=True)
-        return Tensor(t * (grad_output.data - dot)),
+        return Tensor(s * (grad_output.data - dot)),

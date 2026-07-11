@@ -1,4 +1,5 @@
-from core.autograd.activations import ReLUBackward
+from core.functions import relu, sigmoid, tanh, gelu, softmax
+from core.autograd import ReLUBackward
 from typing import override
 import numpy as np
 from core.layer import Layer
@@ -8,56 +9,29 @@ class ReLU(Layer):
     @override
     def forward(self, x: Tensor) -> Tensor:
         """Apply ReLU: max(0, x)"""
-        out = Tensor(np.maximum(0, x.data))
-        out._grad_fn = ReLUBackward(x)
-
-        return out
+        res = relu(x.data)
+        return Tensor(res)
 
 class Sigmoid(Layer):
     @override
     def forward(self, x: Tensor) -> Tensor:
-        # 1. Clip to prevent raw overflow
-        z = np.clip(x.data, -500, 500)
-
-        # 2. Stable computation mask
-        result = np.zeros_like(z)
-
-        # Positive input: standard formula
-        pos_mask = z >= 0
-        result[pos_mask] = 1.0 / (1.0 + np.exp(-z[pos_mask]))
-
-        # Negative input: alternative formula
-        neg_mask = z < 0
-        exp_z = np.exp(z[neg_mask])
-        result[neg_mask] = exp_z / (1.0 + exp_z)
-
-        return Tensor(result)
+        res = sigmoid(x.data)
+        return Tensor(res)
 
 class Tanh(Layer):
     @override
     def forward(self, x: Tensor) -> Tensor:
-        # Relies on Numpy's internal optimization
-        return Tensor(np.tanh(x.data))
-
+        res = tanh(x.data)
+        return Tensor(res)
 
 class GELU(Layer):
     @override
     def forward(self, x: Tensor) -> Tensor:
-        # Approximation: x + sigmoid(1.702 * x)
-        # 1.702 is derived from sqrt(2/pi)
-        return Sigmoid()(x * 1.702) * x
-
+        res = gelu(x.data)
+        return Tensor(res)
 
 class Softmax(Layer):
     @override
-    def forward(self, x: Tensor, dim: int = -1, **_) -> Tensor:
-        # 1. Shift values so max is 0
-        x_max = np.max(x.data, axis=dim, keepdims=True)
-        x_shifted = x.data - x_max
-
-        # 2. Compute safe exponentials
-        exp_values = np.exp(x_shifted)
-
-        # 3. Normalize
-        exp_sum = np.sum(exp_values, axis=dim, keepdims=True)
-        return Tensor(exp_values / exp_sum)
+    def forward(self, x: Tensor, dim: int = -1) -> Tensor:
+        res = softmax(x.data, dim)
+        return Tensor(res)

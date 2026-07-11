@@ -16,7 +16,7 @@ class MSELossBackward(Function):
         return Tensor(grad_output.data * local_grad),
 
 class CrossEntropyBackward(Function):
-    """Gradient computation for Cross Entropy loss"""
+    """Gradient computation for Cross Entropy loss."""
 
     @override
     def apply(self, grad_output: Tensor) -> tuple[Tensor, ...]:
@@ -28,5 +28,21 @@ class CrossEntropyBackward(Function):
         probs = softmax(logits.data, dim=-1)
         probs[np.arange(batch_size), target_indices] -= 1.0
         local_grad: np.ndarray = probs / batch_size
+
+        return Tensor(grad_output.data * local_grad),
+
+class BCELossBackward(Function):
+    """Gradient computation for Binary Cross Entropy loss."""
+
+    @override
+    def apply(self, grad_output: Tensor) -> tuple[Tensor, ...]:
+        predictions, targets = self.saved_tensors
+        eps = 1e-7
+        p = np.clip(predictions.data, eps, 1 - eps)
+        y = targets.data
+        n = predictions.data.size
+
+        # dL/dpred = (p - y) / (p * (1 - p)) / N, with the same clip as the forward
+        local_grad: np.ndarray = (p - y) / (p * (1 - p)) / n
 
         return Tensor(grad_output.data * local_grad),

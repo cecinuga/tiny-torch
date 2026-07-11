@@ -1,6 +1,7 @@
 .venv/
 .claude/
 .vscode/
+dist/
 uv.lock
 *.pyc
 __pycache__/

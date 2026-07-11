@@ -38,6 +38,6 @@ class GELUBackward(Function):
     @override
     def apply(self, grad_output:Tensor) -> tuple[Tensor, ...]:
         t = self.saved_tensors[0]
-        s = sigmoid(t * 1.702)
+        s = sigmoid(t.data * 1.702)
         local_grad = s * (1 + 1.702 * t * (1-s))
         return grad_output * local_grad,

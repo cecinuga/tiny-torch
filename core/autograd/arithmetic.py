@@ -46,10 +46,10 @@ class DivBackward(Function):
         grad_a = grad_b = np.array([])
 
         if a.requires_grad:
-            grad_a = grad_output * (1/b.data)
+            grad_a = grad_output.data * (1/b.data)
 
         if b.requires_grad:
-            grad_b = grad_output * -a/(b**2)
+            grad_b = grad_output.data * -a.data/(b.data**2)
 
         return Tensor(grad_a), Tensor(grad_b)
 
@@ -77,7 +77,9 @@ class SumBackward(Function):
 
     @override
     def apply(self, grad_output: Tensor) -> tuple[Tensor, ...]:
-        return grad_output,
+        t, = self.saved_tensors
+        res = Tensor(np.broadcast_to(grad_output.data, t.shape))
+        return res,
 
 class ReshapeBackward(Function):
     """Gradient computation for reshape operation."""

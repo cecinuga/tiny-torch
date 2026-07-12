@@ -1,6 +1,6 @@
 import numpy as np
 from core.tensor import Tensor
-from core.layer import Linear
+from core.layers import Linear
 
 def main():
     x = np.array([[1, 2, 3], [1, 2, 3], [1, 2, 3]])

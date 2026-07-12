@@ -68,7 +68,7 @@ class Dropout(Layer):
 
     @override
     def forward(self, x: Tensor, training:bool=True) -> Tensor:
-        if not training:
+        if not training or self.p == 0.0:
             return x
 
         # 1. Create Mask

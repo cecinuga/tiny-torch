@@ -1,7 +1,7 @@
 from core.tensor import Tensor
 from core.losses import MSELoss
 from core.activations import ReLU
-from core.layer import Sequential, Linear
+from core.layers import Sequential, Linear
 import numpy as np
 import matplotlib.pyplot as plt
 

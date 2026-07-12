@@ -1,5 +1,5 @@
 from typing import override
-from core.layer import Layer
+from core.layers import Layer
 from core.tensor import Tensor
 from core.functions import relu, sigmoid, tanh, gelu, softmax
 from core.autograd import ReLUBackward, SigmoidBackward, TanhBackward, GELUBackward, SoftmaxBackward

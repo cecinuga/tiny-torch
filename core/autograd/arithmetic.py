@@ -43,9 +43,9 @@ class MulBackward(Function):
         grad_a = grad_b = np.array([])
 
         if a.requires_grad:
-            grad_a = unbroadcast(grad_output.data * b.data, b.shape)
+            grad_a = unbroadcast(grad_output.data * b.data, a.shape)
         if b.requires_grad:
-            grad_b = unbroadcast(grad_output.data * a.data, a.shape)
+            grad_b = unbroadcast(grad_output.data * a.data, b.shape)
 
         return Tensor(grad_a), Tensor(grad_b)
 

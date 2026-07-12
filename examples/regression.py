@@ -35,6 +35,7 @@ for i in range(20):
     print(pred)
     train_loss = loss(pred, dataset)
     print(train_loss)
+    train_loss.backward()
     exit(1)
 
 plt.plot(domain, noisy_y, 'r.')

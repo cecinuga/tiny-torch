@@ -75,11 +75,11 @@ class MatmulBackward(Function):
 
         # Aligns shapes by transposing the partner matrix
         if a.requires_grad:
-            b_T = np.swapaxes(b.data, -2, -1)
+            b_T = np.transpose(b.data)
             grad_a = np.matmul(grad_output.data, b_T)
 
         if b.requires_grad:
-            a_T = np.swapaxes(a.data, -2, -1)
+            a_T = np.transpose(a.data)
             grad_b = np.matmul(a_T, grad_output.data)
 
         return Tensor(grad_a), Tensor(grad_b)

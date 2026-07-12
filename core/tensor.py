@@ -152,6 +152,7 @@ class Tensor:
 
     def backward(self, gradient:Tensor|None=None):
         """Compute gradients via backpropagation"""
+
         if not self.requires_grad:
             return
 

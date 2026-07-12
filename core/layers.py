@@ -44,13 +44,12 @@ class Linear(Layer):
         """Compute the layer output: y = xW + b"""
         # 1. Matrix multiplication
         output = x.matmul(self.weight)
-        res = output
 
         # 2. Bias Addition (Broadcasting)
         if self.bias is not None:
-            res = output + self.bias
+            output = output + self.bias
 
-        return res
+        return output
 
     @property
     @override

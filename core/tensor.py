@@ -164,7 +164,7 @@ class Tensor:
 
         if self.grad is None:
             self.grad = np.zeros_like(self.data)
-        print(self.grad.shape, gradient.data.shape)
+
         self.grad += gradient.data
 
         if self._grad_fn is not None:

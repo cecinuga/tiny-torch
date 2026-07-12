@@ -1,4 +1,4 @@
-from core.autograd.losses import CrossEntropyBackward, MSELossBackward, BCELossBackward
+from core.autograd.losses import CrossEntropyLossBackward, MSELossBackward, BCELossBackward
 from core.functions import mse, cross_entropy, binary_cross_entropy
 from core.tensor import Tensor
 
@@ -14,7 +14,7 @@ class MSELoss:
 class CrossEntropyLoss:
     def forward(self, logits: Tensor, targets: Tensor) -> Tensor:
         out = Tensor(cross_entropy(logits.data, targets.data))
-        out._grad_fn = CrossEntropyBackward(logits, targets)
+        out._grad_fn = CrossEntropyLossBackward(logits, targets)
 
         return out
 

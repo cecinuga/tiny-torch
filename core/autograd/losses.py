@@ -15,7 +15,7 @@ class MSELossBackward(Function):
 
         return Tensor(grad_output.data * local_grad),
 
-class CrossEntropyBackward(Function):
+class CrossEntropyLossBackward(Function):
     """Gradient computation for Cross Entropy loss."""
 
     @override

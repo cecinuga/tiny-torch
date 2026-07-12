@@ -1,18 +1,13 @@
+import numpy as np
 from core.tensor import Tensor
-from core.losses import MSELoss
+from core.layer import Linear
 
 def main():
-    targets = Tensor([1, 2, 3])
-    loss_fn = MSELoss()
+    x = np.array([[1, 2, 3], [1, 2, 3], [1, 2, 3]])
+    new = np.broadcast_to(x, (1, 3))
 
-    a = Tensor([5, 1, 2], requires_grad=True)
-    b = Tensor([3, 4, 1], requires_grad=True)
-    c = a * b
-
-    loss = loss_fn(c, targets)
-
-    grad = loss.backward()
-    print(grad)
+    print(x)
+    print(new)
 
 if __name__ == "__main__":
     main()

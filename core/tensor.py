@@ -93,12 +93,12 @@ class Tensor:
                     f"inner dimension must match: {self.shape[-1]} != {other.shape[-2]}"
                 )
 
-        out = np.matmul(self.data, other.data)
+        out = Tensor(np.matmul(self.data, other.data))
         if isinstance(other, Tensor):
             out._grad_fn = MatmulBackward(self, other)
             return out
 
-        return Tensor(out)
+        return out
 
     def reshape(self, *shape) -> Tensor:
         if len(shape) == 1 and isinstance(shape[0], (tuple, list)):

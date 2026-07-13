@@ -73,14 +73,17 @@ class MatmulBackward(Function):
         a, b = self.saved_tensors
         grad_a = grad_b = np.array([])
 
+        g = grad_output.data[..., None, :] if grad_output.data.ndim == 1 else grad_output.data
         # Aligns shapes by transposing the partner matrix
         if a.requires_grad:
-            b_T = np.transpose(b.data)
-            grad_a = np.matmul(grad_output.data, b_T)
+            b2 = b.data[..., None] if b.data.ndim == 1 else np.swapaxes(b.data, -2, -1)
+            g_a:np.ndarray = np.matmul(g, b2)
+            grad_a = unbroadcast(g_a, a.shape)
 
         if b.requires_grad:
-            a_T = np.transpose(a.data)
-            grad_b = np.matmul(a_T, grad_output.data)
+            a2 = a.data[..., None] if a.data.ndim == 1 else np.swapaxes(a.data, -2, -1)
+            g_b:np.ndarray = np.matmul(a2, g)
+            grad_b = unbroadcast(g_b, b.shape)
 
         return Tensor(grad_a), Tensor(grad_b)
 

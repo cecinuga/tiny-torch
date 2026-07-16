@@ -29,7 +29,7 @@ class SGD(Optimizer):
 
             grad_data = param.grad
             if self.weight_decay != 0:
-                grad_data = grad_data + self.weight_decay * param.grad
+                grad_data = grad_data + self.weight_decay * param.data
 
             param.data = param.data - self.lr * grad_data
 
@@ -106,7 +106,7 @@ class Adam(Optimizer):
             param.data = param.data - (self.lr * m_hat) / (np.sqrt(v_hat) + self.eps)
 
 class AdamW(Optimizer):
-    def __init__(self, params: list[Tensor], lr: float, eps: float, betas:tuple[float, float]=(0.9, 0.999), weight_decay: float=0.0):
+    def __init__(self, params: list[Tensor], lr: float=0.001, betas:tuple[float, float]=(0.9, 0.999), eps: float=1e-8, weight_decay: float=0.0):
         super().__init__(params)
         self.lr:float = lr
         self.eps:float = eps
@@ -139,9 +139,9 @@ class AdamW(Optimizer):
             m_hat = self.m_buffers[i] / bias_correction1  # ty:ignore[unsupported-operator]  # pyright: ignore[reportOptionalOperand]
             v_hat = self.v_buffers[i] / bias_correction2  # ty:ignore[unsupported-operator]  # pyright: ignore[reportOptionalOperand]
 
-            # Apply gradient-based update
-            param.data = param.data - (self.lr * m_hat) / (np.sqrt(v_hat) + self.eps)
-
             # Apply decoupled weight decay (separate from gradient update)
             if self.weight_decay != 0:
                 param.data = param.data * (1 - self.lr * self.weight_decay)
+
+            # Apply gradient-based update
+            param.data = param.data - (self.lr * m_hat) / (np.sqrt(v_hat) + self.eps)

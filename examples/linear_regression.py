@@ -1,11 +1,11 @@
+from core.optimizer import SGD
 from core.tensor import Tensor
 from core.losses import MSELoss
-from core.activations import ReLU
 from core.layers import Sequential, Linear
 import numpy as np
 import matplotlib.pyplot as plt
 
-DATASET_SIZE = 10
+DATASET_SIZE = 3
 
 # Utils
 def rescale(x: np.ndarray, n: float):
@@ -21,22 +21,25 @@ def f(x: np.ndarray):
 domain = rescale(np.random.random(size=DATASET_SIZE), 5) # Equivalent of np.linspace(-10, 10, 100)
 y = f(domain)
 noisy_y = y + np.random.rand(*y.shape)*30
-dataset = Tensor(noisy_y)
+mean, std = noisy_y.mean(), noisy_y.std()
+dataset = Tensor((noisy_y-mean)/std)
 
 # Model architecture
 model = Sequential(
     Linear(DATASET_SIZE, DATASET_SIZE),
 )
 loss = MSELoss()
+optimizer = SGD(model.parameters, 1e-4)
 
 # Train loop
-for i in range(20):
+for i in range(5000):
     pred = model(dataset)
-    print(pred)
     train_loss = loss(pred, dataset)
-    print(train_loss)
     train_loss.backward()
-    exit(1)
+    optimizer.step()
 
-plt.plot(domain, noisy_y, 'r.')
+
+out = model(dataset)
+plt.plot(domain, dataset.data, 'r.')
+plt.plot(domain, out.data)
 plt.show()

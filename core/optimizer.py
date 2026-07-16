@@ -19,7 +19,6 @@ class SGD(Optimizer):
         super().__init__(params)
         self.lr:float = lr
         self.weight_decay:float = weight_decay
-        self.step_count:int = 0
 
     @override
     def step(self) -> None:
@@ -31,7 +30,7 @@ class SGD(Optimizer):
             if self.weight_decay != 0:
                 grad_data = grad_data + self.weight_decay * param.data
 
-            param.data = param.data - self.lr * grad_data
+            param.data -= self.lr * grad_data
 
 class SGDM(Optimizer):
     def __init__(self, params: list[Tensor], lr: float=0.01, momentum: float=0.0, weight_decay:float=0.0):
@@ -59,7 +58,7 @@ class SGDM(Optimizer):
                 self.momentum_buffer[i] = (self.momentum * self.momentum_buffer[i]) + grad_data  # ty:ignore[unsupported-operator]  # pyright: ignore[reportOperatorIssue]
                 grad_data = self.momentum_buffer[i]
 
-            param.data = param.data - (self.lr * grad_data)  # ty:ignore[unsupported-operator]  # pyright: ignore[reportOperatorIssue]
+            param.data -= (self.lr * grad_data)  # ty:ignore[unsupported-operator]  # pyright: ignore[reportOperatorIssue]
 
     def has_momentum(self) -> bool:
         return self.momentum > 0
@@ -78,7 +77,6 @@ class Adam(Optimizer):
         self.beta1, self.beta2 = betas
         self.m_buffers:list[np.ndarray|None] = [None for _ in params]
         self.v_buffers:list[np.ndarray|None] = [None for _ in params]
-        self.step_count:int = 0
 
     @override
     def step(self) -> None:
@@ -103,7 +101,7 @@ class Adam(Optimizer):
             v_hat = self.v_buffers[i] / bias_correction2 # pyright: ignore[reportOptionalOperand]  # ty:ignore[unsupported-operator]
 
             # 3. Update parameter (Adaptive step)
-            param.data = param.data - (self.lr * m_hat) / (np.sqrt(v_hat) + self.eps)
+            param.data -= (self.lr * m_hat) / (np.sqrt(v_hat) + self.eps)
 
 class AdamW(Optimizer):
     def __init__(self, params: list[Tensor], lr: float=0.001, betas:tuple[float, float]=(0.9, 0.999), eps: float=1e-8, weight_decay: float=0.0):
@@ -114,7 +112,6 @@ class AdamW(Optimizer):
         self.weight_decay:float = weight_decay
         self.m_buffers:list[np.ndarray|None] = [None for _ in params]
         self.v_buffers:list[np.ndarray|None] = [None for _ in params]
-        self.step_count:int = 0
 
     @override
     def step(self) -> None:
@@ -141,7 +138,7 @@ class AdamW(Optimizer):
 
             # Apply decoupled weight decay (separate from gradient update)
             if self.weight_decay != 0:
-                param.data = param.data * (1 - self.lr * self.weight_decay)
+                param.data *= (1 - self.lr * self.weight_decay)
 
             # Apply gradient-based update
-            param.data = param.data - (self.lr * m_hat) / (np.sqrt(v_hat) + self.eps)
+            param.data -= (self.lr * m_hat) / (np.sqrt(v_hat) + self.eps)

@@ -23,15 +23,15 @@ class SGD(Optimizer):
 
     @override
     def step(self) -> None:
+        self.step_count += 1
         for param in self.params:
             if param.grad is None: continue
 
-            grad_data = param.data
+            grad_data = param.grad
             if self.weight_decay != 0:
                 grad_data = grad_data + self.weight_decay * param.grad
 
             param.data = param.data - self.lr * grad_data
-        self.step_count += 1
 
 class SGDM(Optimizer):
     def __init__(self, params: list[Tensor], lr: float=0.01, momentum: float=0.0, weight_decay:float=0.0):
@@ -44,9 +44,13 @@ class SGDM(Optimizer):
 
     @override
     def step(self) -> None:
+        self.step_count += 1
         for i, param in enumerate(self.params):
             if param.grad is None: continue
             grad_data = param.grad
+
+            if self.weight_decay != 0:
+                grad_data = grad_data + self.weight_decay * param.data
             if self.momentum != 0:
                 if self.momentum_buffer[i] is None:
                     self.momentum_buffer[i] = np.zeros_like(param.data)
@@ -56,8 +60,6 @@ class SGDM(Optimizer):
                 grad_data = self.momentum_buffer[i]
 
             param.data = param.data - (self.lr * grad_data)  # ty:ignore[unsupported-operator]  # pyright: ignore[reportOperatorIssue]
-
-        self.step_count += 1
 
     def has_momentum(self) -> bool:
         return self.momentum > 0
@@ -80,6 +82,7 @@ class Adam(Optimizer):
 
     @override
     def step(self) -> None:
+        self.step_count += 1
         for i, param in enumerate(self.params):
             if param.grad is None: continue
             if self.m_buffers[i] is None:
@@ -102,8 +105,6 @@ class Adam(Optimizer):
             # 3. Update parameter (Adaptive step)
             param.data = param.data - (self.lr * m_hat) / (np.sqrt(v_hat) + self.eps)
 
-        self.step_count += 1
-
 class AdamW(Optimizer):
     def __init__(self, params: list[Tensor], lr: float, eps: float, betas:tuple[float, float]=(0.9, 0.999), weight_decay: float=0.0):
         super().__init__(params)
@@ -117,6 +118,7 @@ class AdamW(Optimizer):
 
     @override
     def step(self) -> None:
+        self.step_count += 1
         for i, param in enumerate(self.params):
             if param.grad is None: continue
             if self.m_buffers[i] is None:
@@ -143,5 +145,3 @@ class AdamW(Optimizer):
             # Apply decoupled weight decay (separate from gradient update)
             if self.weight_decay != 0:
                 param.data = param.data * (1 - self.lr * self.weight_decay)
-
-        self.step_count += 1

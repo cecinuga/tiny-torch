@@ -15,10 +15,11 @@ class Optimizer:
         raise NotImplementedError()
 
 class SGD(Optimizer):
-    def __init__(self, params: list[Tensor], lr: float=0.01, weight_decay=0.0):
+    def __init__(self, params: list[Tensor], lr: float=0.01, weight_decay:float=0.0):
         super().__init__(params)
         self.lr:float = lr
-        self.weight_decay = weight_decay
+        self.weight_decay:float = weight_decay
+        self.step_count:int = 0
 
     @override
     def step(self) -> None:
@@ -33,12 +34,13 @@ class SGD(Optimizer):
         self.step_count += 1
 
 class SGDM(Optimizer):
-    def __init__(self, params: list[Tensor], lr: float=0.01, momentum: float=0.0, weight_decay=0.0):
+    def __init__(self, params: list[Tensor], lr: float=0.01, momentum: float=0.0, weight_decay:float=0.0):
         super().__init__(params)
         self.momentum_buffer:list[np.ndarray|None] = [None for _ in params]
         self.weight_decay:float = weight_decay
         self.momentum:float = momentum
         self.lr:float = lr
+        self.step_count:int = 0
 
     @override
     def step(self) -> None:
@@ -55,6 +57,8 @@ class SGDM(Optimizer):
 
             param.data = param.data - (self.lr * grad_data)  # ty:ignore[unsupported-operator]  # pyright: ignore[reportOperatorIssue]
 
+        self.step_count += 1
+
     def has_momentum(self) -> bool:
         return self.momentum > 0
 
@@ -65,14 +69,14 @@ class SGDM(Optimizer):
         self.momentum_buffer = buffers
 
 class Adam(Optimizer):
-    def __init__(self, params: list[Tensor], lr: float=0.001, betas:tuple[float, float]=(0.9, 0.999), eps: float=1e-8, weight_decay:float=0.0):
+    def __init__(self, params: list[Tensor], lr: float=0.001, betas:tuple[float, float]=(0.9, 0.999), eps: float=1e-8):
         super().__init__(params)
         self.lr:float = lr
         self.eps:float = eps
         self.beta1, self.beta2 = betas
-        self.weight_decay = weight_decay
         self.m_buffers:list[np.ndarray|None] = [None for _ in params]
         self.v_buffers:list[np.ndarray|None] = [None for _ in params]
+        self.step_count:int = 0
 
     @override
     def step(self) -> None:
@@ -87,23 +91,57 @@ class Adam(Optimizer):
             self.m_buffers[i] = self.beta1 * self.m_buffers[i] + (1 - self.beta1) * param.grad  # ty:ignore[unsupported-operator]  # pyright: ignore[reportOperatorIssue]
             self.v_buffers[i] = self.beta2 * self.v_buffers[i] + (1 - self.beta2) * (param.grad**2)  # ty:ignore[unsupported-operator]  # pyright: ignore[reportOperatorIssue]
 
+            # Compute bias correction
+            bias_correction1:float = 1 - self.beta1 ** self.step_count
+            bias_correction2:float = 1 - self.beta2 ** self.step_count
+
             # 2. Compute bias-corrected moments
-            m_hat = self.m_buffers[i] / bias_correction1
-            v_hat = self.v_buffers[i] / bias_correction2
+            m_hat = self.m_buffers[i] / bias_correction1 # pyright: ignore[reportOptionalOperand]  # ty:ignore[unsupported-operator]
+            v_hat = self.v_buffers[i] / bias_correction2 # pyright: ignore[reportOptionalOperand]  # ty:ignore[unsupported-operator]
 
             # 3. Update parameter (Adaptive step)
             param.data = param.data - (self.lr * m_hat) / (np.sqrt(v_hat) + self.eps)
 
-class AdamW(Adam):
-    def __init__(self, params: list[Tensor], lr: float, eps: float, beta1: float, beta2: float, weight_decay: float):
-        super().__init__(params, lr, eps, beta1, beta2)
-        self.params:list[Tensor] = params
-        self.weight_decay:float = weight_decay
-        self.lr:float = lr
+        self.step_count += 1
 
+class AdamW(Optimizer):
+    def __init__(self, params: list[Tensor], lr: float, eps: float, betas:tuple[float, float]=(0.9, 0.999), weight_decay: float=0.0):
+        super().__init__(params)
+        self.lr:float = lr
+        self.eps:float = eps
+        self.beta1, self.beta2 = betas
+        self.weight_decay:float = weight_decay
+        self.m_buffers:list[np.ndarray|None] = [None for _ in params]
+        self.v_buffers:list[np.ndarray|None] = [None for _ in params]
+        self.step_count:int = 0
 
     @override
     def step(self) -> None:
-        super().step()
-        for param in self.params:
-            param.data = param.data * (1 - self.lr * self.weight_decay)
+        for i, param in enumerate(self.params):
+            if param.grad is None: continue
+            if self.m_buffers[i] is None:
+                self.m_buffers[i] = np.zeros_like(param.grad)
+            if self.v_buffers[i] is None:
+                self.v_buffers[i] = np.zeros_like(param.grad)
+
+            grad_data = param.grad
+
+            # Update moments using pure gradients (NO weight decay mixed in)
+            self.m_buffers[i] = self.beta1 * self.m_buffers[i] + (1 - self.beta1) * grad_data  # ty:ignore[unsupported-operator]  # pyright: ignore[reportOperatorIssue]
+            self.v_buffers[i] = self.beta2 * self.v_buffers[i] + (1 - self.beta2) * (grad_data ** 2)  # ty:ignore[unsupported-operator]  # pyright: ignore[reportOperatorIssue]
+
+            # Compute bias correction and bias-corrected moments
+            bias_correction1 = 1 - self.beta1 ** self.step_count
+            bias_correction2 = 1 - self.beta2 ** self.step_count
+
+            m_hat = self.m_buffers[i] / bias_correction1  # ty:ignore[unsupported-operator]  # pyright: ignore[reportOptionalOperand]
+            v_hat = self.v_buffers[i] / bias_correction2  # ty:ignore[unsupported-operator]  # pyright: ignore[reportOptionalOperand]
+
+            # Apply gradient-based update
+            param.data = param.data - (self.lr * m_hat) / (np.sqrt(v_hat) + self.eps)
+
+            # Apply decoupled weight decay (separate from gradient update)
+            if self.weight_decay != 0:
+                param.data = param.data * (1 - self.lr * self.weight_decay)
+
+        self.step_count += 1

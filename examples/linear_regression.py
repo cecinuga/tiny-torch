@@ -37,9 +37,9 @@ optimizer = SGD(model.parameters, 1e-2)
 
 
 # Save graph of models
-model.save_graph("./tmp/architecture.png", arch=True)
-model.save_graph("./tmp/forward.png", arch=False, forward=True)
-model.save_graph("./tmp/backward.png", arch=False, backward=True)
+model.save_graph("./arch/architecture.png", arch=True)
+model.save_graph("./arch/forward.png", arch=False, forward=True)
+model.save_graph("./arch/backward.png", arch=False, backward=True)
 
 
 # Train loop

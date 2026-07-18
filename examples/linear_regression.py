@@ -1,16 +1,14 @@
-from core.activations import ReLU
 from core.optimizer import SGD
 from core.tensor import Tensor
 from core.losses import MSELoss
 from core.layers import Sequential, Linear
-from core.loader import TensorDataset
 import numpy as np
 import matplotlib.pyplot as plt
 
 # Configuration
-EPOCHS = 20
+EPOCHS = 75
 TEST_STEP = 5
-DATASET_SIZE = 20
+DATASET_SIZE = 50
 NOISY = 2
 
 
@@ -21,48 +19,54 @@ def f(x: np.ndarray):
 
 
 # Dataset
-domain = np.linspace(-1, 1, DATASET_SIZE)
-y = f(domain)
-train_data = Tensor(y + np.random.rand(*y.shape)*NOISY)
-test_data = Tensor(y + np.random.rand(*y.shape)*NOISY)
-dataset = TensorDataset(train_data, test_data)
-
+train_domain = np.linspace(-5, 5, DATASET_SIZE).reshape(-1, 1)
+test_domain = np.linspace(-10, 10, DATASET_SIZE).reshape(-1, 1)
+y_train = f(train_domain)
+y_test = f(test_domain)
+train_y = Tensor(y_train + np.random.rand(*y_train.shape)*NOISY)
+train_x = Tensor(train_domain)
+test_y = Tensor(y_test + np.random.rand(*y_test.shape)*NOISY)
+test_x = Tensor(test_domain)
 
 # Model architecture
 model = Sequential(
-    Linear(DATASET_SIZE, DATASET_SIZE),
-    ReLU(),
+    Linear(1, 1),   # one slope, one intercept
 )
+loss = MSELoss()
+optimizer = SGD(model.parameters, 1e-2)
+
+
+# Save graph of models
 model.save_graph("./tmp/architecture.png", arch=True)
 model.save_graph("./tmp/forward.png", arch=False, forward=True)
 model.save_graph("./tmp/backward.png", arch=False, backward=True)
 
-loss = MSELoss()
-optimizer = SGD(model.parameters, 1e-4)
 
 # Train loop
 test_losses: list[np.ndarray] = []
 train_losses: list[np.ndarray] = []
 for i in range(EPOCHS):
-    pred = model(dataset.tensors[0])
-    train_loss = loss(pred, dataset.tensors[0])
+    pred = model(train_x)
+    train_loss = loss(pred, train_y)
+    train_losses.append(train_loss.data)
+
     if i%TEST_STEP == 0:
         model.eval()
-        test_pred = model(dataset.tensors[1])
-        test_loss = loss(test_pred, dataset.tensors[1])
+        test_pred = model(test_x)
+        test_loss = loss(test_pred, test_y)
         test_losses.append(test_loss.data)
         model.train()
 
-    train_losses.append(train_loss.data)
-
     train_loss.backward()
     optimizer.step()
+    optimizer.zero_grad()
 
 # Eval
-out = model(dataset.tensors[1])
+out = model(test_x)
 
 # Plot in one window, divided into sections
 fig, (ax_loss, ax_result) = plt.subplots(1, 2, figsize=(12, 5))
+
 
 # Loss section
 ax_loss.plot(list(range(EPOCHS)), train_losses, label="train")
@@ -73,8 +77,8 @@ ax_loss.set_ylabel("loss")
 ax_loss.legend()
 
 # Result section (the regression)
-ax_result.plot(domain, dataset.tensors[1].data, 'r.', label="target")
-ax_result.plot(domain, out.data, label="prediction")
+ax_result.plot(test_domain, test_y.data, 'r.', label="target")
+ax_result.plot(test_domain, out.data, label="prediction")
 ax_result.set_title("Regression")
 ax_result.set_xlabel("x")
 ax_result.set_ylabel("y")

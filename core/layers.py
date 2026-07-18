@@ -33,9 +33,12 @@ class Linear(Layer):
         scale = np.sqrt(1.0 / in_feature)
         weight_data:np.ndarray = np.random.randn(in_feature, out_feature) * scale
         self.weight:Tensor = Tensor(weight_data)
+        # Semantic role used when drawing the computational graph.
+        self.weight.role = "weights"
 
         if bias:
             self.bias = Tensor(np.zeros(out_feature))
+            self.bias.role = "bias"
         else:
             self.bias = None
 
@@ -113,16 +116,26 @@ class Sequential(Layer):
             params.extend(layer.parameters)
         return params
 
-    def build_graph(self) -> None:
-        """Build the network + backward computational graph of this model."""
+    def build_graph(self, arch: bool = True, forward: bool = False,
+                    backward: bool = False) -> None:
+        """Build the graph of this model.
+
+        Args:
+            arch: include the network architecture (layer info).
+            forward: include the forward computational graph (data flow).
+            backward: include the backward computational graph (autograd ops).
+        """
         # Imported lazily to avoid a circular import (core.graph imports layers).
         from core.graph import ComputationalGraph
         self._graph = ComputationalGraph(self)
-        self._graph.build()
+        self._graph.build(arch=arch, forward=forward, backward=backward)
 
-    def save_graph(self, path: str | Path) -> None:
-        """Render the built graph to a .png image at ``path``."""
-        if self._graph is None:
-            self.build_graph()
+    def save_graph(self, path: str | Path, arch: bool = True, forward: bool = False,
+                   backward: bool = False) -> None:
+        """Render the graph to a .png image at ``path``."""
+        self.build_graph(arch, forward, backward)
         assert self._graph is not None
         self._graph.render(path)
+
+    def destroy_graph(self) -> None:
+        self._graph = None

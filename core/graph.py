@@ -17,18 +17,28 @@ _STYLE = {
     "layer":  {"shape": "record", "style": "filled", "fillcolor": "#cfe8ff", "color": "#2b6cb0"},
     "io":     {"shape": "ellipse", "style": "filled", "fillcolor": "#e2e8f0", "color": "#4a5568"},
     "op":     {"shape": "box", "style": "rounded,filled", "fillcolor": "#fed7aa", "color": "#c05621"},
-    "leaf":   {"shape": "ellipse", "style": "filled", "fillcolor": "#c6f6d5", "color": "#2f855a"},
-    "tensor": {"shape": "ellipse", "style": "filled", "fillcolor": "#faf089", "color": "#975a16"},
+}
+
+# Each tensor node is labelled and coloured by its semantic role. The four
+# roles are: input, weights, bias (leaf parameters/inputs) and hidden (any
+# tensor produced by an operation).
+_ROLE_STYLE = {
+    "input":   {"shape": "ellipse", "style": "filled", "fillcolor": "#e2e8f0", "color": "#4a5568"},
+    "weights": {"shape": "ellipse", "style": "filled", "fillcolor": "#c6f6d5", "color": "#2f855a"},
+    "bias":    {"shape": "ellipse", "style": "filled", "fillcolor": "#bee3f8", "color": "#2b6cb0"},
+    "hidden":  {"shape": "ellipse", "style": "filled", "fillcolor": "#faf089", "color": "#975a16"},
 }
 
 
 class ComputationalGraph:
     """Builds a graphviz picture of a Sequential model.
 
-    The picture is split in two clusters:
+    The picture can hold up to three clusters:
       * "Network Architecture" - one node per layer with its basic info.
-      * "Backward Computational Graph" - the autograd operation graph produced
-        by a forward/backward pass, showing how gradients flow between tensors.
+      * "Forward Computational Graph" - the operation graph produced by a
+        forward pass, showing how data flows from the input to the output.
+      * "Backward Computational Graph" - the same autograd graph read in
+        reverse, showing how gradients flow between tensors.
     """
 
     def __init__(self, model: "Layer"):
@@ -38,16 +48,32 @@ class ComputationalGraph:
     # ------------------------------------------------------------------ #
     # Public API
     # ------------------------------------------------------------------ #
-    def build(self) -> None:
-        """Create the graphviz graph and cache it on the instance."""
+    def build(self, arch: bool = True, forward: bool = False,
+              backward: bool = False) -> None:
+        """Create the graphviz graph and cache it on the instance.
+
+        Args:
+            arch: include the "Network Architecture" cluster (layer info).
+            forward: include the "Forward Computational Graph" cluster
+                (data flow from input to output).
+            backward: include the "Backward Computational Graph" cluster
+                (autograd operations produced by a forward/backward pass).
+        """
+        if not arch and not forward and not backward:
+            raise ValueError("build() needs at least one of arch/forward/backward to be True")
+
         graph = graphviz.Digraph("model", format="png")
         graph.attr(rankdir="TB", fontname="Helvetica", labelloc="t",
                    label="tiny-torch model graph", fontsize="18")
         graph.attr("node", fontname="Helvetica", fontsize="11")
         graph.attr("edge", fontname="Helvetica", fontsize="9", color="#4a5568")
 
-        self._build_network(graph)
-        self._build_backward(graph)
+        if arch:
+            self._build_network(graph)
+        if forward:
+            self._build_forward(graph)
+        if backward:
+            self._build_backward(graph)
 
         self._graph = graph
 
@@ -102,6 +128,50 @@ class ComputationalGraph:
         return "{" + " | ".join(parts) + "}"
 
     # ------------------------------------------------------------------ #
+    # Forward computational graph cluster
+    # ------------------------------------------------------------------ #
+    def _build_forward(self, graph: graphviz.Digraph) -> None:
+        out = self._run_forward()
+        if out is None or out._grad_fn is None:
+            return
+
+        with graph.subgraph(name="cluster_forward") as fwd:
+            fwd.attr(label="Forward Computational Graph", style="rounded",
+                     color="#2f855a", fontcolor="#2f855a", fontsize="14")
+
+            out_id = f"f{id(out)}"
+            self._walk_forward(fwd, out._grad_fn, out_id, set())
+            fwd.node(out_id, self._tensor_label("output", out), **_STYLE["tensor"])
+
+    def _walk_forward(self, g: graphviz.Digraph, fn: "Function", result_id: str,
+                      visited: set[int]) -> None:
+        """Recursively add operation and tensor nodes, edges point the way
+        data flows during the forward pass (from the leaves to the output)."""
+        fn_id = f"ff{id(fn)}"
+        if id(fn) not in visited:
+            visited.add(id(fn))
+            g.node(fn_id, self._op_forward_name(fn), **_STYLE["op"])
+        # The operation produces its result -> data flows op -> result.
+        g.edge(fn_id, result_id)
+
+        for t in fn.saved_tensors:
+            t_id = f"f{id(t)}"
+            if t._grad_fn is not None:
+                g.node(t_id, self._tensor_label("", t), **_STYLE["tensor"])
+                g.edge(t_id, fn_id)  # input tensor feeds the operation
+                self._walk_forward(g, t._grad_fn, t_id, visited)
+            else:
+                kind = "leaf" if t.requires_grad else "tensor"
+                name = "param/leaf" if t.requires_grad else "input/const"
+                g.node(t_id, self._tensor_label(name, t), **_STYLE[kind])
+                g.edge(t_id, fn_id)
+
+    @staticmethod
+    def _op_forward_name(fn: "Function") -> str:
+        """Forward-facing operation name, e.g. MatmulBackward -> Matmul."""
+        return type(fn).__name__.replace("Backward", "") or type(fn).__name__
+
+    # ------------------------------------------------------------------ #
     # Backward computational graph cluster
     # ------------------------------------------------------------------ #
     def _build_backward(self, graph: graphviz.Digraph) -> None:
@@ -139,11 +209,29 @@ class ComputationalGraph:
                 g.node(t_id, self._tensor_label(name, t), **_STYLE[kind])
                 g.edge(fn_id, t_id)
 
+    def _tensor_node(self, g: graphviz.Digraph, t: Tensor, prefix: str) -> str:
+        """Add (once) a tensor node labelled and coloured by its role."""
+        node_id = f"{prefix}{id(t)}"
+        role = self._tensor_role(t)
+        g.node(node_id, self._tensor_label(role, t), **_ROLE_STYLE[role])
+        return node_id
+
     @staticmethod
-    def _tensor_label(name: str, t: Tensor) -> str:
-        head = f"{name}\n" if name else ""
+    def _tensor_role(t: Tensor) -> str:
+        """One of: input, weights, bias, hidden.
+
+        Parameters carry an explicit ``role`` (set by the layers); the synthetic
+        forward input is tagged ``input``; everything else is a ``hidden`` tensor
+        produced by an operation."""
+        role = getattr(t, "role", None)
+        if role in _ROLE_STYLE:
+            return role
+        return "hidden"
+
+    @staticmethod
+    def _tensor_label(role: str, t: Tensor) -> str:
         grad = "grad=set" if t.grad is not None else "grad=None"
-        return f"{head}Tensor {tuple(t.shape)}\n{grad}"
+        return f"{role}\nTensor {tuple(t.shape)}\n{grad}"
 
     # ------------------------------------------------------------------ #
     # Helpers
@@ -156,6 +244,7 @@ class ComputationalGraph:
             return None
 
         x = Tensor(np.ones((1, in_feature), dtype=np.float32))
+        x.role = "input"
         out = self.model(x)
 
         # A backward pass populates .grad on every tensor in the graph so the

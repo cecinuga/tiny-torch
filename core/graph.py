@@ -139,9 +139,8 @@ class ComputationalGraph:
             fwd.attr(label="Forward Computational Graph", style="rounded",
                      color="#2f855a", fontcolor="#2f855a", fontsize="14")
 
-            out_id = f"f{id(out)}"
+            out_id = self._tensor_node(fwd, out, "f")
             self._walk_forward(fwd, out._grad_fn, out_id, set())
-            fwd.node(out_id, self._tensor_label("output", out), **_STYLE["tensor"])
 
     def _walk_forward(self, g: graphviz.Digraph, fn: "Function", result_id: str,
                       visited: set[int]) -> None:
@@ -155,16 +154,10 @@ class ComputationalGraph:
         g.edge(fn_id, result_id)
 
         for t in fn.saved_tensors:
-            t_id = f"f{id(t)}"
+            t_id = self._tensor_node(g, t, "f")
+            g.edge(t_id, fn_id)  # input tensor feeds the operation
             if t._grad_fn is not None:
-                g.node(t_id, self._tensor_label("", t), **_STYLE["tensor"])
-                g.edge(t_id, fn_id)  # input tensor feeds the operation
                 self._walk_forward(g, t._grad_fn, t_id, visited)
-            else:
-                kind = "leaf" if t.requires_grad else "tensor"
-                name = "param/leaf" if t.requires_grad else "input/const"
-                g.node(t_id, self._tensor_label(name, t), **_STYLE[kind])
-                g.edge(t_id, fn_id)
 
     @staticmethod
     def _op_forward_name(fn: "Function") -> str:
@@ -183,8 +176,7 @@ class ComputationalGraph:
             bwd.attr(label="Backward Computational Graph", style="rounded",
                      color="#c05621", fontcolor="#c05621", fontsize="14")
 
-            out_id = f"t{id(out)}"
-            bwd.node(out_id, self._tensor_label("output", out), **_STYLE["tensor"])
+            out_id = self._tensor_node(bwd, out, "t")
             self._walk(bwd, out._grad_fn, out_id, set())
 
     def _walk(self, g: graphviz.Digraph, fn: "Function", child_id: str,
@@ -198,16 +190,10 @@ class ComputationalGraph:
         g.edge(child_id, fn_id, label="grad")
 
         for t in fn.saved_tensors:
-            t_id = f"t{id(t)}"
+            t_id = self._tensor_node(g, t, "t")
+            g.edge(fn_id, t_id)
             if t._grad_fn is not None:
-                g.node(t_id, self._tensor_label("", t), **_STYLE["tensor"])
-                g.edge(fn_id, t_id)
                 self._walk(g, t._grad_fn, t_id, visited)
-            else:
-                kind = "leaf" if t.requires_grad else "tensor"
-                name = "param/leaf" if t.requires_grad else "const"
-                g.node(t_id, self._tensor_label(name, t), **_STYLE[kind])
-                g.edge(fn_id, t_id)
 
     def _tensor_node(self, g: graphviz.Digraph, t: Tensor, prefix: str) -> str:
         """Add (once) a tensor node labelled and coloured by its role."""

@@ -5,7 +5,7 @@ if TYPE_CHECKING:
     from core.autograd import Function
 
 class Tensor:
-    def __init__(self, data, requires_grad:bool=True):
+    def __init__(self, data, requires_grad:bool=True, role:str|None=None):
         if isinstance(data, (list, tuple)) and len(data) > 0 and isinstance(data[0], Tensor):
             data = np.stack([t.data for t in data])
         self.data: np.ndarray = np.array(data, dtype=np.float32)
@@ -15,9 +15,12 @@ class Tensor:
         self.requires_grad:bool = requires_grad
         self.grad: np.ndarray|None = None
         self._grad_fn: Function|None = None
+        self.role:str|None = role
 
     @override
     def __repr__(self) -> str:
+        if self.role is not None:
+            return f"Tensor=(role={self.role},shape={self.shape}, size={self.size}, dtype={self.dtype})"
         return f"Tensor=(shape={self.shape}, size={self.size}, dtype={self.dtype})"
 
     @override

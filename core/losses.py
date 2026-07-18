@@ -1,12 +1,11 @@
-from core.autograd.losses import CrossEntropyLossBackward, MSELossBackward, BCELossBackward
+from core.autograd import CrossEntropyLossBackward, MSELossBackward, BCELossBackward
 from core.functions import mse, cross_entropy, binary_cross_entropy
 from core.tensor import Tensor
 
 class MSELoss:
     def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
         out = Tensor(mse(predictions.data, targets.data))
-        if out.requires_grad:
-            out._grad_fn = MSELossBackward(predictions, targets)
+        out._grad_fn = MSELossBackward(predictions, targets)
         return out
 
     def __call__(self, predictions: Tensor, targets: Tensor) -> Tensor:
@@ -15,8 +14,7 @@ class MSELoss:
 class CrossEntropyLoss:
     def forward(self, logits: Tensor, targets: Tensor) -> Tensor:
         out = Tensor(cross_entropy(logits.data, targets.data))
-        if out.requires_grad:
-            out._grad_fn = CrossEntropyLossBackward(logits, targets)
+        out._grad_fn = CrossEntropyLossBackward(logits, targets)
 
         return out
 
@@ -26,8 +24,7 @@ class CrossEntropyLoss:
 class BinaryCrossEntropyLoss:
     def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
         out = Tensor(binary_cross_entropy(predictions.data, targets.data))
-        if out.requires_grad:
-            out._grad_fn = BCELossBackward(predictions, targets)
+        out._grad_fn = BCELossBackward(predictions, targets)
 
         return out
 

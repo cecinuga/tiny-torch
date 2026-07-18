@@ -51,15 +51,17 @@ def log_softmax(x: np.ndarray, dim:int=-1) -> np.ndarray:
 
     return x - max_vals - log_sum_exp
 
-def mse(predictions: np.ndarray, targets: np.ndarray) -> np.ndarray:
+def squared_error(predictions: np.ndarray, targets: np.ndarray) -> np.ndarray:
     # 1. Element-wise difference
     diff = predictions - targets
 
     # 2. Square the differences
     squared_diff = diff**2
 
-    # 3. Mean reduction
-    return  np.array(np.mean(squared_diff))
+    return squared_diff
+
+def mse(predictions: np.ndarray, targets: np.ndarray) -> np.ndarray:
+    return  np.array(np.mean(squared_error(predictions, targets)))
 
 def cross_entropy(logits: np.ndarray, targets: np.ndarray) -> np.ndarray:
     # 1. Apply stable log_softmax

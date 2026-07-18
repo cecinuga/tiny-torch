@@ -135,7 +135,7 @@ class ComputationalGraph:
         if out is None or out._grad_fn is None:
             return
 
-        with graph.subgraph(name="cluster_forward") as fwd:
+        with graph.subgraph(name="cluster_forward") as fwd:  # pyright: ignore[reportUnknownMemberType, reportOptionalContextManager]
             fwd.attr(label="Forward Computational Graph", style="rounded",
                      color="#2f855a", fontcolor="#2f855a", fontsize="14")
 
@@ -172,7 +172,7 @@ class ComputationalGraph:
         if out is None or out._grad_fn is None:
             return
 
-        with graph.subgraph(name="cluster_backward") as bwd:
+        with graph.subgraph(name="cluster_backward") as bwd:  # pyright: ignore[reportUnknownMemberType, reportOptionalContextManager]
             bwd.attr(label="Backward Computational Graph", style="rounded",
                      color="#c05621", fontcolor="#c05621", fontsize="14")
 

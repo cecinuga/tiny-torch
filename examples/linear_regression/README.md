@@ -28,34 +28,30 @@ model = Sequential(
 )
 ```
 
-### Architecture
+<table>
+  <tr>
+    <th>Architecture</th>
+    <th>Forward pass</th>
+    <th>Backward pass</th>
+  </tr>
+  <tr>
+    <td><img src="./arch/architecture.png" alt="architecture" /></td>
+    <td><img src="./arch/forward.png" alt="forward" /></td>
+    <td><img src="./arch/backward.png" alt="backward" /></td>
+  </tr>
+</table>
 
-![architecture](./arch/architecture.png)
-
-A single `Linear` layer maps a scalar input to a scalar output. `bias=True`
-means the intercept is a trainable parameter too — without it the line would be
-forced through the origin.
-
-### Forward pass
-
-![forward](./arch/forward.png)
-
-The forward pass is `y = x @ w + b`:
-
-1. **Matmul** — the input is multiplied by the weight tensor (the slope).
-2. **Add** — the bias (the intercept) is added.
-
-Every node is a `Tensor` that records the operation that produced it, so the
-graph can be walked backwards later.
-
-### Backward pass
-
-![backward](./arch/backward.png)
-
-Calling `.backward()` on the loss walks the graph in reverse. `AddBackward` and
-`MatmulBackward` distribute the gradient of the loss down to the two learnable
-tensors (`weights` and `bias`), which is exactly what the optimizer needs to
-nudge the slope and intercept in the right direction.
+- **Architecture.** A single `Linear` layer maps a scalar input to a scalar
+  output. `bias=True` means the intercept is a trainable parameter too — without
+  it the line would be forced through the origin.
+- **Forward pass.** The forward pass is `y = x @ w + b`: a **Matmul** multiplies
+  the input by the weight tensor (the slope), then an **Add** adds the bias (the
+  intercept). Every node is a `Tensor` that records the operation that produced
+  it, so the graph can be walked backwards later.
+- **Backward pass.** Calling `.backward()` on the loss walks the graph in
+  reverse. `AddBackward` and `MatmulBackward` distribute the gradient of the loss
+  down to the two learnable tensors (`weights` and `bias`), which is exactly what
+  the optimizer needs to nudge the slope and intercept in the right direction.
 
 ---
 

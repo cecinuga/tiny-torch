@@ -16,6 +16,12 @@ class Layer(ABC):
     def __call__(self, x: Tensor) -> Tensor:
         return self.forward(x)
 
+    def train(self) -> None:
+        pass
+
+    def eval(self) -> None:
+        pass
+
     @property
     def parameters(self) -> list[Tensor]:
         return []
@@ -31,14 +37,12 @@ class Linear(Layer):
 
         # Xavier initialization
         scale = np.sqrt(1.0 / in_feature)
-        weight_data:np.ndarray = np.random.randn(in_feature, out_feature) * scale
-        self.weight:Tensor = Tensor(weight_data)
+        weights_data:np.ndarray = np.random.randn(in_feature, out_feature) * scale
+        self.weights:Tensor = Tensor(weights_data, role="weights")
         # Semantic role used when drawing the computational graph.
-        self.weight.role = "weights"
 
         if bias:
-            self.bias = Tensor(np.zeros(out_feature))
-            self.bias.role = "bias"
+            self.bias = Tensor(np.zeros(out_feature), role="bias")
         else:
             self.bias = None
 
@@ -50,7 +54,7 @@ class Linear(Layer):
     def forward(self, x: Tensor) -> Tensor:
         """Compute the layer output: y = xW + b"""
         # 1. Matrix multiplication
-        output = x.matmul(self.weight)
+        output = x.matmul(self.weights)
 
         # 2. Bias Addition (Broadcasting)
         if self.bias is not None:
@@ -58,11 +62,23 @@ class Linear(Layer):
 
         return output
 
+    @override
+    def train(self) -> None:
+        self.weights.requires_grad=True
+        if self.bias is not None:
+            self.bias.requires_grad=True
+
+    @override
+    def eval(self) -> None:
+        self.weights.requires_grad=False
+        if self.bias is not None:
+            self.bias.requires_grad=False
+
     @property
     @override
     def parameters(self):
         """Return the list of trainable parameters in the layer"""
-        params = [self.weight]
+        params = [self.weights]
 
         if self.bias is not None:
             params.append(self.bias)
@@ -72,10 +88,11 @@ class Linear(Layer):
 class Dropout(Layer):
     def __init__(self, p:float=0.5):
         self.p:float = p
+        self.training:bool=True
 
     @override
-    def forward(self, x: Tensor, training:bool=True) -> Tensor:
-        if not training or self.p == 0.0:
+    def forward(self, x: Tensor) -> Tensor:
+        if not self.training or self.p == 0.0:
             return x
 
         # 1. Create Mask
@@ -87,6 +104,14 @@ class Dropout(Layer):
 
         # 3. Apply
         return x * Tensor(mask) * Tensor(scale)
+
+    @override
+    def train(self) -> None:
+        self.training = True
+
+    @override
+    def eval(self) -> None:
+        self.training = False
 
     @override
     def __repr__(self) -> str:
@@ -115,6 +140,16 @@ class Sequential(Layer):
         for layer in self.layers:
             params.extend(layer.parameters)
         return params
+
+    @override
+    def train(self) -> None:
+        for layer in self.layers:
+            layer.train()
+
+    @override
+    def eval(self) -> None:
+        for layer in self.layers:
+            layer.eval()
 
     def build_graph(self, arch: bool = True, forward: bool = False,
                     backward: bool = False) -> None:

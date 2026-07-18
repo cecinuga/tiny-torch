@@ -10,7 +10,8 @@ class ReLU(Layer):
     @override
     def forward(self, x: Tensor) -> Tensor:
         res = Tensor(relu(x.data))
-        res._grad_fn = ReLUBackward(x)
+        if res.requires_grad:
+            res._grad_fn = ReLUBackward(x)
         return res
 
 class Sigmoid(Layer):
@@ -19,7 +20,8 @@ class Sigmoid(Layer):
     @override
     def forward(self, x: Tensor) -> Tensor:
         res = Tensor(sigmoid(x.data))
-        res._grad_fn = SigmoidBackward(x)
+        if res.requires_grad:
+            res._grad_fn = SigmoidBackward(x)
         return Tensor(res)
 
 class Tanh(Layer):
@@ -28,7 +30,8 @@ class Tanh(Layer):
     @override
     def forward(self, x: Tensor) -> Tensor:
         res = Tensor(tanh(x.data))
-        res._grad_fn = TanhBackward(x)
+        if res.requires_grad:
+            res._grad_fn = TanhBackward(x)
         return res
 
 class GELU(Layer):
@@ -37,7 +40,8 @@ class GELU(Layer):
     @override
     def forward(self, x: Tensor) -> Tensor:
         res = Tensor(gelu(x.data))
-        res._grad_fn = GELUBackward(x)
+        if res.requires_grad:
+            res._grad_fn = GELUBackward(x)
         return res
 
 class Softmax(Layer):
@@ -46,5 +50,6 @@ class Softmax(Layer):
     @override
     def forward(self, x: Tensor, dim: int = -1) -> Tensor:
         res = Tensor(softmax(x.data, dim))
-        res._grad_fn = SoftmaxBackward(x, dim)
+        if res.requires_grad:
+            res._grad_fn = SoftmaxBackward(x, dim)
         return res

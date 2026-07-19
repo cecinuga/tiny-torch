@@ -28,6 +28,7 @@ X_test = Tensor(np.hstack([test_domain, test_domain**2]))
 train_y = Tensor(f_train + np.random.uniform(-1, 1, f_train.shape)*NOISY)
 test_y = Tensor(f_test + np.random.uniform(-1, 1, f_test.shape)*NOISY)
 
+
 # Model architecture
 model = Sequential(
     Linear(2, 1),

@@ -6,10 +6,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Configuration
-EPOCHS = 25
+EPOCHS = 50
 TEST_STEP = 5
 DATASET_SIZE = 50
-NOISY = 8
+NOISY = 80
 
 
 # To estimate function
@@ -31,10 +31,10 @@ test_y = Tensor(f_test + np.random.uniform(-1, 1, f_test.shape)*NOISY)
 
 # Model architecture
 model = Sequential(
-    Linear(2, 1),
+    Linear(3, 1),
 )
 loss = MSELoss()
-optimizer = SGD(model.parameters, 1e-3)
+optimizer = SGD(model.parameters, 1e-4)
 
 
 # Save graph of models

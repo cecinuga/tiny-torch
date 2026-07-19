@@ -63,6 +63,26 @@ comparable scale — then a single learning rate would work for all degrees.
 
 ---
 
+## Results
+
+The same story at every degree: the loss converges, and on the wider test
+domain the learned curve tracks the true polynomial — the model recovered the
+coefficients, not the data points.
+
+### Linear — `2·x + 5`
+
+![linear results](./linear/results.png)
+
+### Quadratic — `x² + 2·x + 2`
+
+![quadratic results](./quadratic/results.png)
+
+### Cubic — `1.2·x³ − 2.3·x² + 2·x + 2`
+
+![cubic results](./cubic/results.png)
+
+---
+
 ## Run them
 
 ```bash

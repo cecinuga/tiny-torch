@@ -35,6 +35,7 @@ A = np.hstack([test_x.data, np.ones_like(test_x.data)])
 m, c = np.linalg.lstsq(A, test_y.data.ravel(), rcond=None)[0]
 closed_form = test_x.data*m + c
 
+
 # Model architecture
 model = Sequential(
     Linear(1, 1),   # one slope, one intercept

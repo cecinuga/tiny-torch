@@ -45,9 +45,9 @@ optimizer = SGD(model.parameters, 1e-2)
 
 
 # Save graph of models
-#model.save_graph("./examples/linear_regression/arch/architecture.png", arch=True)
-#model.save_graph("./examples/linear_regression/arch/forward.png", arch=False, forward=True)
-#model.save_graph("./examples/linear_regression/arch/backward.png", arch=False, backward=True)
+#model.save_graph("./examples/linear_regression/simple/arch/architecture.png", arch=True)
+#model.save_graph("./examples/linear_regression/simple/arch/forward.png", arch=False, forward=True)
+#model.save_graph("./examples/linear_regression/simple/arch/backward.png", arch=False, backward=True)
 
 
 # Train loop

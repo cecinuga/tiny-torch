@@ -6,10 +6,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Configuration
-EPOCHS = 50
+EPOCHS = 75
 TEST_STEP = 5
 DATASET_SIZE = 50
-NOISY = 80
+NOISY = 120
 
 
 # To estimate function

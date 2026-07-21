@@ -43,8 +43,10 @@ class TensorDataset(Dataset):
     
     @override
     def split(self, ratio:float=0.1):
-        a = [t[:int(len(t)*(1-ratio))] for t in self.tensors]
-        b = [t[int(len(t)*(1-ratio)):] for t in self.tensors]
+        slice = int(len(self.tensors[0])*(1-ratio))
+
+        a = [Tensor(t[:slice]) for t in self.tensors]
+        b = [Tensor(t[slice:]) for t in self.tensors]
         return a, b
 
 class ImageDataset(Dataset):

@@ -29,6 +29,13 @@ class Tensor:
 
     def numpy(self):
         return self.data
+    
+    def __getitem__(self, idx: int) -> np.ndarray:
+        return self.data[idx]
+    
+    @override
+    def __len__(self) -> int:
+        return len(self.data)
 
     def __neg__(self):
         return Tensor(-self.data)

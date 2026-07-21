@@ -53,6 +53,12 @@ Both datasets are otherwise identical: `100` samples, targets computed as
 `f(X)` and then perturbed with uniform noise (`NOISE = 2`), and split 95% / 5%
 into train and test sets via `TensorDataset.split()`.
 
+![Feature correlation: ill-conditioned vs well-conditioned](images/feature_correlation.png)
+
+The scatter plots make the difference visible directly: the ill-conditioned
+features collapse onto a single line (`x1 ≈ x0`), while the well-conditioned
+features fill the plane with no discernible relationship.
+
 ---
 
 ## The model
@@ -80,6 +86,12 @@ optimizer.zero_grad()
 The loss curves for both runs are plotted side by side to confirm that
 training converges in both cases.
 
+![Loss curves: ill-conditioned vs well-conditioned](images/loss_curves.png)
+
+Both models converge smoothly, and their train/test loss curves look
+unremarkable — nothing in this plot hints that anything is wrong with the
+ill-conditioned run.
+
 ---
 
 ## Measuring the damage: predictions vs. weights
@@ -97,15 +109,15 @@ If the model has learned *the* coefficients, both residuals should be small.
 ### Ill-conditioned results
 
 ```
-prediction residual: 3.01
-weights residual:    2,050,472.84
+prediction residual: 4.53
+weights residual:    916,521.76
 ```
 
 ### Well-conditioned results
 
 ```
-prediction residual: 1.57
-weights residual:    0.41
+prediction residual: 1.43
+weights residual:    0.40
 ```
 
 The prediction residual is in the same ballpark for both datasets — both
@@ -113,6 +125,15 @@ models make comparable predictions. The weights residual tells a completely
 different story: on the ill-conditioned data it is off by **six orders of
 magnitude**, while on the well-conditioned data it stays small and consistent
 with the closed-form solution.
+
+![Model weights vs closed-form weights: ill-conditioned vs well-conditioned](images/weights_comparison.png)
+
+Plotting the model's learned weights against the closed-form coefficients
+makes the gap obvious: on the well-conditioned dataset the two bars for each
+weight line up almost exactly, while on the ill-conditioned dataset the model
+and the closed-form solution disagree wildly on the individual weights —
+even swinging in opposite directions — despite both fitting the data about
+equally well.
 
 ---
 
@@ -133,6 +154,15 @@ predictive check on held-out data and still have coefficients that are not
 trustworthy — flipping sign, exploding in magnitude, or changing drastically
 with small perturbations to the data — which matters whenever the *coefficients
 themselves* (not just the predictions) are meant to be interpreted.
+
+In production, that collinearity can break for any reason — a sensor outage,
+or simply a shift in operating conditions. A model that seemed to rely on
+stable, interpretable coefficients can see those coefficients swing wildly
+once the correlation between features that held during training no longer
+holds at inference time. Whenever the learned coefficients themselves need to
+be interpreted, not just used for prediction, it's worth checking the
+conditioning of your input features before trusting what a model has
+"learned" about them.
 
 ---
 

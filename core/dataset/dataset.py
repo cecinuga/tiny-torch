@@ -21,7 +21,7 @@ class Dataset(ABC):
         pass
 
     @abstractmethod
-    def split(self, ration: float=0.1) -> tuple[list[Tensor], list[Tensor]]:
+    def split(self, ratio: float=0.1) -> tuple[list[Tensor], list[Tensor]]:
         """Split the dataset into chunk of length [length*(1-ratio), length*ratio] and return it"""
         pass
 
@@ -40,9 +40,9 @@ class TensorDataset(Dataset):
     def __getitem__(self, idx: int):
         # Return tuple of slices wrapped in Tensor
         return tuple(Tensor(t.data[idx]) for t in self.tensors)
-    
+
     @override
-    def split(self, ratio:float=0.1):
+    def split(self, ratio:float=0.1) -> tuple[list[Tensor], list[Tensor]]:
         slice = int(len(self.tensors[0])*(1-ratio))
 
         a = [Tensor(t[:slice]) for t in self.tensors]

@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Configuration
-EPOCHS = 100
+EPOCHS = 150
 TEST_STEP = 5
 DATASET_SIZE = 50
 NOISY = 8

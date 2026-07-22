@@ -1,4 +1,4 @@
-from typing import override
+from typing import override, Any
 import numpy as np
 from core.tensor import Tensor
 
@@ -13,6 +13,9 @@ class Optimizer:
             param.zero_grad()
 
     def step(self) -> None:
+        raise NotImplementedError()
+
+    def get_state(self) -> Any:
         raise NotImplementedError()
 
 class SGD(Optimizer):
@@ -32,6 +35,10 @@ class SGD(Optimizer):
                 grad_data = grad_data + self.weight_decay * param.data
 
             param.data -= self.lr * grad_data
+
+    @override
+    def get_state(self):
+        return { 'lr': self.lr, 'weight_decay': self.weight_decay }
 
 class SGDM(Optimizer):
     def __init__(self, params: list[Tensor], lr: float=0.01, momentum: float=0.0, weight_decay:float=0.0):
@@ -64,11 +71,10 @@ class SGDM(Optimizer):
     def has_momentum(self) -> bool:
         return self.momentum > 0
 
-    def get_momentum_state(self) -> list[np.ndarray|None]:
-        return self.momentum_buffer
+    @override
+    def get_state(self):
+        return {'lr': self.lr, 'weight_decay': self.weight_decay, 'momentum': self.momentum, 'momentum_buffer': self.momentum_buffer}
 
-    def set_momentum_state(self, buffers: list[np.ndarray|None]) -> None:
-        self.momentum_buffer = buffers
 
 class Adam(Optimizer):
     def __init__(self, params: list[Tensor], lr: float=0.001, betas:tuple[float, float]=(0.9, 0.999), eps: float=1e-8):
@@ -103,6 +109,17 @@ class Adam(Optimizer):
 
             # 3. Update parameter (Adaptive step)
             param.data -= (self.lr * m_hat) / (np.sqrt(v_hat) + self.eps)
+
+        @override
+        def get_state(self):
+            return {
+                'lr': self.lr,
+                'eps': self.eps,
+                'betas': (self.beta1, self.beta2),
+                'm_buffers': self.m_buffers,
+                'v_buffers': self.v_buffers
+            }
+
 
 class AdamW(Optimizer):
     def __init__(self, params: list[Tensor], lr: float=0.001, betas:tuple[float, float]=(0.9, 0.999), eps: float=1e-8, weight_decay: float=0.0):
@@ -143,3 +160,14 @@ class AdamW(Optimizer):
 
             # Apply gradient-based update
             param.data -= (self.lr * m_hat) / (np.sqrt(v_hat) + self.eps)
+
+        @override
+        def get_state(self):
+            return {
+                'lr': self.lr,
+                'eps': self.eps,
+                'betas': (self.beta1, self.beta2),
+                'weight_decay': self.weight_decay,
+                'm_buffers': self.m_buffers,
+                'v_buffers': self.v_buffers
+            }

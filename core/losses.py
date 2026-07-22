@@ -1,5 +1,5 @@
 from typing import override
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 
 from core.autograd import CrossEntropyLossBackward, MSELossBackward, BCELossBackward, Function
 from core.functions import mse, cross_entropy, binary_cross_entropy

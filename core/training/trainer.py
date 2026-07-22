@@ -1,13 +1,32 @@
+from core.training import Schedule
 from core.tensor import Tensor
 import pickle
 from pathlib import Path
 import numpy as np
 
 from core.dataset import DataLoader
-from core.training import Schedule, clip_grad_norm
 from core.losses import Loss
 from core.optimizer import Optimizer
 from core.layers import Layer
+
+def clip_grad_norm(parameters: list[Tensor], max_norm: float = 1.0) -> float:
+    # 1. Compute global norm across all parameters
+    total_norm = 0.0
+    for param in parameters:
+        if param.grad is not None:
+            # Access raw data to avoid graph overhead
+            grad_data = param.grad
+            total_norm += np.sum(grad_data ** 2)
+    total_norm = np.sqrt(total_norm)
+
+    # 2. Scale uniformly if norm exceeds threshold
+    if total_norm > max_norm:
+        clip_coef = max_norm / total_norm
+        for param in parameters:
+            if param.grad is not None:
+                param.grad *= clip_coef
+
+    return float(total_norm)
 
 class Trainer:
     def __init__(self,
@@ -24,12 +43,28 @@ class Trainer:
         self.grad_clip_norm: float|None = grad_clip_norm
 
         # State tracking
+        self.step: int = 0
         self.epoch: int = 0
         self.training: bool = True
-        self.history:dict[str, list[float]] = {'train_loss': [], 'eval_loss': []}
+        self.history:dict[str, list[float]] = {'train_loss': [], 'eval_loss': [], 'lr': []}
 
-    def train_epoch(self, dataloader: DataLoader, accumulation_step:int = 1):
+    def _accumulate(self, total_loss: float, accumulated_loss: float, num_batches: int):
+        if self.grad_clip_norm is not None:
+            params = self.model.parameters
+            _ = clip_grad_norm(params, self.grad_clip_norm)
+
+        self.optimizer.step()
+        self.optimizer.zero_grad()
+        total_loss += accumulated_loss
+        num_batches += 1
+
+        return total_loss, accumulated_loss, num_batches
+
+    def train_epoch(self, dataloader: DataLoader, accumulation_steps:int = 1):
         self.model.train()
+
+        total_loss: float = 0
+        num_batches:float = 0
         accumulated_loss: float = 0
 
         for batch_idx, (inputs, targets) in enumerate(dataloader):
@@ -39,33 +74,38 @@ class Trainer:
 
             # 2. Scale loss for accumulation
             # Dividing by N so the sum of N gradients equals to mean
-            scaled_loss = loss.data / accumulation_step
+            scaled_loss = loss.data / accumulation_steps
             accumulated_loss += float(scaled_loss)
 
             # 3. Backward pass (accumulates into .grad)
             loss.backward()
 
-            # Only update every 'accumulation_step'
-            if (batch_idx + 1) % accumulation_step == 0:
-                # 4. Gradient Clipping (Safety)
-                if self.grad_clip_norm is not None:
-                    _ = clip_grad_norm(self.model.parameters, self.grad_clip_norm)
+            # Only update every 'accumulation_steps'
+            if (batch_idx + 1) % accumulation_steps == 0:
+                total_loss, accumulated_loss, num_batches = self._accumulate(total_loss, accumulated_loss, num_batches)
+                self.step += 1
 
-                self.history['train_loss'].append(accumulated_loss)
-                # 5. Optimizer Step (Update)
-                self.optimizer.step()
-                self.optimizer.zero_grad() # Clear buffers
+        if accumulated_loss > 0:
+            total_loss, _, num_batches = self._accumulate(total_loss, accumulated_loss, num_batches)
 
-            if self.scheduler is not None:
-                self.optimizer.lr = self.scheduler.get_lr(self.epoch)
+        avg_loss = total_loss / max(num_batches, 1)
+        self.history['train_loss'].append(avg_loss)
 
-            self.epoch += 1
+        if self.scheduler is not None:
+            self.optimizer.lr = self.scheduler.get_lr(self.epoch)
+            self.history['lr'].append(self.optimizer.lr)
 
-    def eval(self, dataloader: DataLoader) -> float:
+        self.epoch += 1
+        return avg_loss
+
+    def eval(self, dataloader: DataLoader) -> tuple[float, float]:
         self.model.eval()
         self.training = False
 
-        total_loss:float = 0.0
+        total_loss: float = 0
+        correct: int = 0
+        total: int = 0
+
         for inputs, targets in dataloader:
             # Forward pass only
             preds = self.model(inputs)
@@ -73,9 +113,22 @@ class Trainer:
 
             total_loss += float(loss.data)
 
+            # Calculate accuracy (for classification)
+            if len(preds.shape) > 1: # Multi class
+                predictions = np.argmax(preds.data, axis=1)
+                if len(targets.shape) == 1: # Integer targets
+                    correct += np.sum(predictions == targets.data)
+                else:
+                    correct += np.sum(predictions == np.argmax(targets.data, axis=1))
+                total += len(predictions)
+
+        avg_loss = total_loss / len(dataloader) if len(dataloader) > 0 else 0
+        accuracy = correct / total if total > 0 else 0
+
         self.model.train()
         self.training = True
-        return total_loss / len(dataloader)
+        self.history['eval_loss'].append(avg_loss)
+        return avg_loss, accuracy
 
     def _get_model_state(self) -> list[Tensor]:
         return self.model.parameters
@@ -91,11 +144,13 @@ class Trainer:
     def save(self, path: Path|str) -> None:
         checkpoint = {
             'epoch':            self.epoch,
+            'step':             self.step,
+            'history':          self.history,
             'model_state':      self._get_model_state(),
             'optimizer_state':  self._get_optimizer_state(),
             'scheduler_state':  self._get_scheduler_state(),
-            'history':          self.history
         }
 
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
         with open(path, 'wb') as f:
             pickle.dump(checkpoint, f)

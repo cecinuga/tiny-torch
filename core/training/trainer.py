@@ -1,3 +1,6 @@
+from core.tensor import Tensor
+import pickle
+from pathlib import Path
 import numpy as np
 
 from core.dataset import DataLoader
@@ -27,7 +30,7 @@ class Trainer:
 
     def train_epoch(self, dataloader: DataLoader, accumulation_step:int = 1):
         self.model.train()
-        accumulated_loss: np.ndarray = np.array([])
+        accumulated_loss: float = 0
 
         for batch_idx, (inputs, targets) in enumerate(dataloader):
             # 1. Forward pass
@@ -37,7 +40,7 @@ class Trainer:
             # 2. Scale loss for accumulation
             # Dividing by N so the sum of N gradients equals to mean
             scaled_loss = loss.data / accumulation_step
-            accumulated_loss += scaled_loss
+            accumulated_loss += float(scaled_loss)
 
             # 3. Backward pass (accumulates into .grad)
             loss.backward()
@@ -48,6 +51,7 @@ class Trainer:
                 if self.grad_clip_norm is not None:
                     _ = clip_grad_norm(self.model.parameters, self.grad_clip_norm)
 
+                self.history['train_loss'].append(accumulated_loss)
                 # 5. Optimizer Step (Update)
                 self.optimizer.step()
                 self.optimizer.zero_grad() # Clear buffers
@@ -72,3 +76,26 @@ class Trainer:
         self.model.train()
         self.training = True
         return total_loss / len(dataloader)
+
+    def _get_model_state(self) -> list[Tensor]:
+        return self.model.parameters
+
+    def _get_optimizer_state(self):
+        return self.optimizer.get_state()
+
+    def _get_scheduler_state(self):
+        if self.scheduler is not None:
+            return self.scheduler.get_state()
+        return None
+
+    def save(self, path: Path|str) -> None:
+        checkpoint = {
+            'epoch':            self.epoch,
+            'model_state':      self._get_model_state(),
+            'optimizer_state':  self._get_optimizer_state(),
+            'scheduler_state':  self._get_scheduler_state(),
+            'history':          self.history
+        }
+
+        with open(path, 'wb') as f:
+            pickle.dump(checkpoint, f)

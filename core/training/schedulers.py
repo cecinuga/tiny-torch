@@ -23,7 +23,7 @@ def clip_grad_norm(parameters: list[Tensor], max_norm: float = 1.0) -> float:
 
 class Schedule(ABC):
     @abstractmethod
-    def get_lr(self, epoch: int) -> np.ndarray | float:
+    def get_lr(self, epoch: int) -> float:
         pass
 
 
@@ -33,11 +33,11 @@ class CosineSchedule(Schedule):
         self.min_lr:float = min_lr
         self.total_epochs:int = total_epochs
 
-    def get_lr(self, epoch: int) -> np.ndarray | float:
+    def get_lr(self, epoch: int) -> float:
         # Boundary condition
         if epoch >= self.total_epochs:
             return self.min_lr
 
         # Cosine annealing formula
         cosine_factor:np.ndarray = (1 + np.cos(np.pi * epoch / self.total_epochs)) / 2
-        return self.min_lr + (self.max_lr - self.min_lr) * cosine_factor
+        return float(self.min_lr + (self.max_lr - self.min_lr) * cosine_factor)

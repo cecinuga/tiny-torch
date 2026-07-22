@@ -16,9 +16,11 @@ class Layer(ABC):
     def __call__(self, x: Tensor) -> Tensor:
         return self.forward(x)
 
+    @abstractmethod
     def train(self) -> None:
         pass
 
+    @abstractmethod
     def eval(self) -> None:
         pass
 
@@ -32,6 +34,7 @@ class Layer(ABC):
 
 class Linear(Layer):
     def __init__(self, in_feature:int, out_feature:int, bias:bool=True):
+        self.training: bool = True
         self.in_feature = in_feature
         self.out_feature = out_feature
 
@@ -64,12 +67,14 @@ class Linear(Layer):
 
     @override
     def train(self) -> None:
+        self.training = True
         self.weights.requires_grad=True
         if self.bias is not None:
             self.bias.requires_grad=True
 
     @override
     def eval(self) -> None:
+        self.training = False
         self.weights.requires_grad=False
         if self.bias is not None:
             self.bias.requires_grad=False
@@ -87,8 +92,8 @@ class Linear(Layer):
 
 class Dropout(Layer):
     def __init__(self, p:float=0.5):
-        self.p:float = p
-        self.training:bool=True
+        self.p: float = p
+        self.training: bool=True
 
     @override
     def forward(self, x: Tensor) -> Tensor:
@@ -105,6 +110,7 @@ class Dropout(Layer):
         # 3. Apply
         return x * Tensor(mask) * Tensor(scale)
 
+
     @override
     def train(self) -> None:
         self.training = True
@@ -120,6 +126,7 @@ class Dropout(Layer):
 
 class Sequential(Layer):
     def __init__(self, *layers: Layer):
+        self.training: bool = True
         self.layers: list[Layer] = list(layers)
         self._graph: ComputationalGraph | None = None
 
@@ -143,11 +150,13 @@ class Sequential(Layer):
 
     @override
     def train(self) -> None:
+        self.training = True
         for layer in self.layers:
             layer.train()
 
     @override
     def eval(self) -> None:
+        self.training = False
         for layer in self.layers:
             layer.eval()
 

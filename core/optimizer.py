@@ -3,9 +3,10 @@ import numpy as np
 from core.tensor import Tensor
 
 class Optimizer:
-    def __init__(self, params: list[Tensor]):
-        self.params:list[Tensor] = params
-        self.step_count:int = 0
+    def __init__(self, params: list[Tensor], lr: float):
+        self.params: list[Tensor] = params
+        self.step_count: int = 0
+        self.lr: float = lr
 
     def zero_grad(self):
         for param in self.params:
@@ -16,7 +17,7 @@ class Optimizer:
 
 class SGD(Optimizer):
     def __init__(self, params: list[Tensor], lr: float=0.01, weight_decay:float=0.0):
-        super().__init__(params)
+        super().__init__(params, lr)
         self.lr:float = lr
         self.weight_decay:float = weight_decay
 
@@ -34,7 +35,7 @@ class SGD(Optimizer):
 
 class SGDM(Optimizer):
     def __init__(self, params: list[Tensor], lr: float=0.01, momentum: float=0.0, weight_decay:float=0.0):
-        super().__init__(params)
+        super().__init__(params, lr)
         self.momentum_buffer:list[np.ndarray|None] = [None for _ in params]
         self.weight_decay:float = weight_decay
         self.momentum:float = momentum
@@ -71,7 +72,7 @@ class SGDM(Optimizer):
 
 class Adam(Optimizer):
     def __init__(self, params: list[Tensor], lr: float=0.001, betas:tuple[float, float]=(0.9, 0.999), eps: float=1e-8):
-        super().__init__(params)
+        super().__init__(params, lr)
         self.lr:float = lr
         self.eps:float = eps
         self.beta1, self.beta2 = betas
@@ -105,7 +106,7 @@ class Adam(Optimizer):
 
 class AdamW(Optimizer):
     def __init__(self, params: list[Tensor], lr: float=0.001, betas:tuple[float, float]=(0.9, 0.999), eps: float=1e-8, weight_decay: float=0.0):
-        super().__init__(params)
+        super().__init__(params, lr)
         self.lr:float = lr
         self.eps:float = eps
         self.beta1, self.beta2 = betas

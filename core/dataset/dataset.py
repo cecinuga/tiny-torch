@@ -20,11 +20,6 @@ class Dataset(ABC):
         """Return the sample at the given index."""
         pass
 
-    @abstractmethod
-    def split(self, ratio: float=0.1) -> tuple[list[Tensor], list[Tensor]]:
-        """Split the dataset into chunk of length [length*(1-ratio), length*ratio] and return it"""
-        pass
-
 class TensorDataset(Dataset):
     def __init__(self, *tensors: Tensor):
         # Validate all tensor have same size in dim 0
@@ -41,13 +36,6 @@ class TensorDataset(Dataset):
         # Return tuple of slices wrapped in Tensor
         return tuple(Tensor(t.data[idx]) for t in self.tensors)
 
-    @override
-    def split(self, ratio:float=0.1) -> tuple[list[Tensor], list[Tensor]]:
-        slice = int(len(self.tensors[0])*(1-ratio))
-
-        a = [Tensor(t[:slice]) for t in self.tensors]
-        b = [Tensor(t[slice:]) for t in self.tensors]
-        return a, b
 
 class ImageDataset(Dataset):
     def __init__(self, image_paths: list[str|Path], labels):

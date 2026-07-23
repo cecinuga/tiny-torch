@@ -146,6 +146,7 @@ class Trainer:
             'epoch':            self.epoch,
             'step':             self.step,
             'history':          self.history,
+            'training_mode':    self.training,
             'model_state':      self._get_model_state(),
             'optimizer_state':  self._get_optimizer_state(),
             'scheduler_state':  self._get_scheduler_state(),
@@ -154,3 +155,22 @@ class Trainer:
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         with open(path, 'wb') as f:
             pickle.dump(checkpoint, f)
+
+    def load(self, path: Path|str) -> None:
+        with open(path, 'wb') as f:
+            checkpoint = pickle.load(f)
+
+        self.epoch = checkpoint['epoch']
+        self.step = checkpoint['step']
+        self.history = checkpoint['history']
+        self.training = checkpoint['training_mode']
+
+        """
+        # Restore states (simplified for educational purposes)
+        if 'model_state' in checkpoint:
+            self._set_model_state(checkpoint['model_state'])
+        if 'optimizer_state' in checkpoint:
+            self._set_optimizer_state(checkpoint['optimizer_state'])
+        if 'scheduler_state' in checkpoint:
+            self._set_scheduler_state(checkpoint['scheduler_state'])
+        """

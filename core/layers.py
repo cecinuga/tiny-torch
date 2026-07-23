@@ -28,6 +28,7 @@ class Layer(ABC):
     def parameters(self) -> list[Tensor]:
         return []
 
+
     @override
     def __repr__(self) -> str:
         return f"{type(self).__name__}()"

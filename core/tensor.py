@@ -1,8 +1,6 @@
 import numpy as np
-from typing import override, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from core.autograd import Function
+from typing import override
+from core.autograd import Function
 
 class Tensor:
     def __init__(self, data, requires_grad:bool=True, role:str|None=None):
@@ -29,11 +27,10 @@ class Tensor:
 
     def numpy(self):
         return self.data
-    
+
     def __getitem__(self, idx: int) -> np.ndarray:
         return self.data[idx]
-    
-    @override
+
     def __len__(self) -> int:
         return len(self.data)
 

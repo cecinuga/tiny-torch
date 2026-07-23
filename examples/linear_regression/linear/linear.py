@@ -8,10 +8,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Configuration
-EPOCHS = 100
+EPOCHS = 50
 EVAL_STEP = 5
 DATASET_SIZE = 100
 NOISY = 8
+MAX_LR = 1e-1
+MIN_LR = 1e-4
 
 
 # To estimate function
@@ -41,8 +43,8 @@ model = Sequential(
     Linear(1, 1),   # one slope, one intercept
 )
 loss = MSELoss()
-optimizer = SGD(model.parameters, 1e-2)
-scheduler = CosineSchedule(1e-1, 1e-4, EPOCHS)
+optimizer = SGD(model.parameters, MAX_LR)
+scheduler = CosineSchedule(MAX_LR, MIN_LR, EPOCHS)
 trainer = Trainer(
     model,
     loss,

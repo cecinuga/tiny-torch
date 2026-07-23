@@ -65,24 +65,30 @@ features fill the plane with no discernible relationship.
 ## The model
 
 Each dataset gets its own copy of the same architecture — a single `Linear`
-layer with two inputs and two outputs — trained with plain SGD:
+layer with two inputs and two outputs — trained with plain SGD via a
+`Trainer`:
 
 ```python
 model = Sequential(Linear(2, 2))
 loss = MSELoss()
 optimizer = SGD(model.parameters, LR)   # LR = 1e-4
+trainer = Trainer(model, loss, optimizer)
 ```
 
-Two independent training loops (`model_ill` / `model_well`) run for
-`EPOCHS = 2500`, logging the test loss every `TEST_STEP = 5` epochs:
+Two independent `Trainer`s (`trainer_ill` / `trainer_well`) run for
+`EPOCHS = 2500`, logging the test loss every `EVAL_STEP = 5` epochs:
 
 ```python
-pred = model(X_tr)
-train_loss = loss(pred, y_tr)
-train_loss.backward()
-optimizer.step()
-optimizer.zero_grad()
+for i, epoch in enumerate(range(EPOCHS)):
+    _ = trainer.train_epoch(train_dataloader, 1)
+
+    if i % EVAL_STEP == 0:
+        _ = trainer.eval(test_dataloader)
 ```
+
+`train_epoch()` runs the forward/backward/optimizer-step internally and logs
+the loss into `trainer.history`; loss curves are read back from
+`trainer.train_loss` / `trainer.eval_loss`.
 
 The loss curves for both runs are plotted side by side to confirm that
 training converges in both cases.

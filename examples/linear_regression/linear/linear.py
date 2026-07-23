@@ -2,13 +2,13 @@ from core.dataset import DataLoader, TensorDataset
 from core.optimizer import SGD
 from core.tensor import Tensor
 from core.losses import MSELoss
-from core.training import Trainer
+from core.training import Trainer, CosineSchedule
 from core.layers import Sequential, Linear
 import numpy as np
 import matplotlib.pyplot as plt
 
 # Configuration
-EPOCHS = 150
+EPOCHS = 100
 EVAL_STEP = 5
 DATASET_SIZE = 100
 NOISY = 8
@@ -42,10 +42,12 @@ model = Sequential(
 )
 loss = MSELoss()
 optimizer = SGD(model.parameters, 1e-2)
+scheduler = CosineSchedule(1e-1, 1e-4, EPOCHS)
 trainer = Trainer(
     model,
     loss,
-    optimizer
+    optimizer,
+    scheduler
 )
 
 # Save graph of models
@@ -58,7 +60,7 @@ trainer = Trainer(
 for i, epoch in enumerate(range(EPOCHS)):
     _ = trainer.train_epoch(train_dataloader, 1)
 
-    if i % EVAL_STEP or i == EVAL_STEP-1 :
+    if i % EVAL_STEP == 0 :
         _ = trainer.eval(test_dataloader)
 
 
@@ -77,9 +79,10 @@ closed_form = test_x.data*m + c
 # Plot in one window, divided into sections
 fig, (ax_loss, ax_result) = plt.subplots(1, 2, figsize=(12, 5))
 
+
 # Loss section
-ax_loss.plot(list(range(EPOCHS)), trainer.history['train_losses'], label="train")
-ax_loss.plot(list(range(0, EPOCHS+1, EVAL_STEP)), trainer.history['eval_losses'], label="test")
+ax_loss.plot(list(range(EPOCHS)), trainer.train_loss, label="train")
+ax_loss.plot(list(range(0, EPOCHS, EVAL_STEP)), trainer.eval_loss, label="test")
 ax_loss.set_title("Loss")
 ax_loss.set_xlabel("epoch")
 ax_loss.set_ylabel("loss")

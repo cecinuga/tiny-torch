@@ -9,9 +9,9 @@ def enable_autograd(quiet:bool=False) -> None:
 
 class Function:
     def __init__(self, *tensors: Tensor):
-        # The Memory Cost
+        # Operands needed to compute the gradients in apply().
         self.saved_tensors:tuple[Tensor, ...] = tensors
-        # The Graph Structure
+        # Each operand's own backward node, turning these into a traversable graph.
         self.next_functions:list[Function|None] = [t._grad_fn for t in tensors]
 
     def apply(self, grad_output:Tensor)-> tuple[Tensor, ...]:

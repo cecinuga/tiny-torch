@@ -5,8 +5,6 @@ from core.utils import unbroadcast
 from core.autograd.base import Function
 
 class AddBackward(Function):
-    """Gradient computation for addition."""
-
     @override
     def apply(self, grad_output: Tensor)-> tuple[Tensor, Tensor]:
         a, b = self.saved_tensors
@@ -20,8 +18,6 @@ class AddBackward(Function):
         return Tensor(grad_a), Tensor(grad_b)
 
 class SubBackward(Function):
-    """Gradient computation for subtraction."""
-
     @override
     def apply(self, grad_output: Tensor) -> tuple[Tensor, Tensor]:
         a, b = self.saved_tensors
@@ -35,8 +31,6 @@ class SubBackward(Function):
         return Tensor(grad_a), Tensor(grad_b)
 
 class MulBackward(Function):
-    """Gradient computation for multiplication."""
-
     @override
     def apply(self, grad_output: Tensor) -> tuple[Tensor, Tensor]:
         a, b = self.saved_tensors
@@ -50,8 +44,6 @@ class MulBackward(Function):
         return Tensor(grad_a), Tensor(grad_b)
 
 class DivBackward(Function):
-    """Gradient computation for division."""
-
     @override
     def apply(self, grad_output: Tensor) -> tuple[Tensor, Tensor]:
         a, b = self.saved_tensors
@@ -66,8 +58,6 @@ class DivBackward(Function):
         return Tensor(grad_a), Tensor(grad_b)
 
 class MatmulBackward(Function):
-    """Gradient computation for matrix multiplication."""
-
     @override
     def apply(self, grad_output: Tensor) -> tuple[Tensor, Tensor]:
         a, b = self.saved_tensors
@@ -88,8 +78,6 @@ class MatmulBackward(Function):
         return Tensor(grad_a), Tensor(grad_b)
 
 class SumBackward(Function):
-    """Gradient computation for sum reduction."""
-
     def __init__(self, x: Tensor, axis:int|None = -1, keepdims:bool = True):
         super().__init__(x)
         self.axis:int|None = axis
@@ -109,8 +97,6 @@ class SumBackward(Function):
         return Tensor(np.broadcast_to(grad, t.shape)),
 
 class ReshapeBackward(Function):
-    """Gradient computation for reshape operation."""
-
     @override
     def apply(self, grad_output: Tensor) -> tuple[Tensor, ...]:
         a, = self.saved_tensors
@@ -122,8 +108,6 @@ class ReshapeBackward(Function):
         return Tensor(out),
 
 class TransposeBackward(Function):
-    """Gradient computation for transpose."""
-
     @override
     def apply(self, grad_output: Tensor) -> tuple[Tensor, ...]:
         t, = self.saved_tensors

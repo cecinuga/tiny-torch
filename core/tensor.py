@@ -6,8 +6,11 @@ if TYPE_CHECKING:
     from core.autograd import Function
 
 class Tensor:
+    """NumPy-backed array that records the operation that produced it for reverse-mode autodiff."""
+
     def __init__(self, data, requires_grad:bool=True, role:str|None=None):
         if isinstance(data, (list, tuple)) and len(data) > 0 and isinstance(data[0], Tensor):
+            # Build a batched tensor from a list of Tensors, e.g. Tensor([t1, t2, ...]).
             data = np.stack([t.data for t in data])
         self.data: np.ndarray = np.array(data, dtype=np.float32)
         self.shape = self.data.shape

@@ -25,6 +25,7 @@ def tanh(x: np.ndarray) -> np.ndarray:
     return np.tanh(x)
 
 def gelu(x: np.ndarray) -> np.ndarray:
+    # Sigmoid approximation of GELU, not the exact erf-based formula.
     return sigmoid(x * 1.702) * x
 
 def softmax(x: np.ndarray, dim:int=-1) -> np.ndarray:
@@ -52,10 +53,7 @@ def log_softmax(x: np.ndarray, dim:int=-1) -> np.ndarray:
     return x - max_vals - log_sum_exp
 
 def squared_error(predictions: np.ndarray, targets: np.ndarray) -> np.ndarray:
-    # 1. Element-wise difference
     diff = predictions - targets
-
-    # 2. Square the differences
     squared_diff = diff**2
 
     return squared_diff

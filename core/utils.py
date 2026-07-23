@@ -1,6 +1,7 @@
 import numpy as np
 
 def unbroadcast(x: np.ndarray, shape:tuple[int, ...]):
+    """Sum `x` down to `shape`, undoing NumPy broadcasting so a gradient matches its operand's shape."""
     while x.ndim > len(shape):
         x = np.sum(x, axis=0)
 

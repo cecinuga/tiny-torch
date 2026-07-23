@@ -10,6 +10,7 @@ from core.dataset import DataLoader
 from core.optimizer import Optimizer
 
 def clip_grad_norm(parameters: list[Tensor], max_norm: float = 1.0) -> float:
+    """Scale all parameter gradients in-place so their combined L2 norm doesn't exceed max_norm; returns the pre-clip norm."""
     # 1. Compute global norm across all parameters
     total_norm = 0.0
     for param in parameters:
@@ -61,6 +62,7 @@ class Trainer:
         return total_loss, accumulated_loss, num_batches
 
     def train_epoch(self, dataloader: DataLoader, accumulation_steps:int = 1) -> float:
+        """Run one epoch, updating parameters every `accumulation_steps` batches; returns the average per-batch loss."""
         self.model.train()
 
         total_loss: float = 0
@@ -100,6 +102,7 @@ class Trainer:
         return avg_loss
 
     def eval(self, dataloader: DataLoader) -> tuple[float, float]:
+        """Evaluate without updating parameters; returns (avg_loss, accuracy). Accuracy is 0.0 for non-classification (1-D) outputs."""
         self.model.eval()
         self.training = False
 
@@ -166,6 +169,7 @@ class Trainer:
             pickle.dump(checkpoint, f)
 
     def load(self, path: Path|str) -> None:
+        """Restore epoch/step/history/training-mode from a checkpoint; model, optimizer and scheduler state are not restored."""
         with open(path, 'rb') as f:
             checkpoint = pickle.load(f)
 

@@ -5,8 +5,6 @@ from core.functions import relu, sigmoid, tanh, gelu, softmax
 from core.autograd import ReLUBackward, SigmoidBackward, TanhBackward, GELUBackward, SoftmaxBackward
 
 class ReLU(Layer):
-    """Compute ReLU activation function"""
-
     @override
     def forward(self, x: Tensor) -> Tensor:
         res = Tensor(relu(x.data))
@@ -15,8 +13,6 @@ class ReLU(Layer):
         return res
 
 class Sigmoid(Layer):
-    """Compute Sigmoid activation function"""
-
     @override
     def forward(self, x: Tensor) -> Tensor:
         res = Tensor(sigmoid(x.data))
@@ -25,8 +21,6 @@ class Sigmoid(Layer):
         return Tensor(res)
 
 class Tanh(Layer):
-    """Compute Tanh activation function"""
-
     @override
     def forward(self, x: Tensor) -> Tensor:
         res = Tensor(tanh(x.data))
@@ -35,8 +29,6 @@ class Tanh(Layer):
         return res
 
 class GELU(Layer):
-    """Compute GELU activation function"""
-
     @override
     def forward(self, x: Tensor) -> Tensor:
         res = Tensor(gelu(x.data))
@@ -45,8 +37,6 @@ class GELU(Layer):
         return res
 
 class Softmax(Layer):
-    """Compute Softmax activation function"""
-
     @override
     def forward(self, x: Tensor, dim: int = -1) -> Tensor:
         res = Tensor(softmax(x.data, dim))

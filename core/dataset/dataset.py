@@ -24,7 +24,7 @@ class TensorDataset(Dataset):
     def __init__(self, *tensors: Tensor):
         # Validate all tensor have same size in dim 0
         first_size = len(tensors[0].data)
-        assert all(len(t.data) == first_size for t in tensors) # Verify homogeneous data
+        assert all(len(t.data) == first_size for t in tensors)
         self.tensors:tuple[Tensor, ...] = tensors
 
     @override

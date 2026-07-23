@@ -43,7 +43,6 @@ class Linear(Layer):
         scale = np.sqrt(1.0 / in_feature)
         weights_data:np.ndarray = np.random.randn(in_feature, out_feature) * scale
         self.weights:Tensor = Tensor(weights_data, role="weights")
-        # Semantic role used when drawing the computational graph.
 
         if bias:
             self.bias = Tensor(np.zeros(out_feature), role="bias")
@@ -57,10 +56,8 @@ class Linear(Layer):
     @override
     def forward(self, x: Tensor) -> Tensor:
         """Compute the layer output: y = xW + b"""
-        # 1. Matrix multiplication
         output = x.matmul(self.weights)
 
-        # 2. Bias Addition (Broadcasting)
         if self.bias is not None:
             output = output + self.bias
 

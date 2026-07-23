@@ -50,8 +50,9 @@ With no relationship between the columns, the condition number drops to
 **k(X) ≈ 1.07** — about as well-behaved as a design matrix gets.
 
 Both datasets are otherwise identical: `100` samples, targets computed as
-`f(X)` and then perturbed with uniform noise (`NOISE = 2`), and split 95% / 5%
-into train and test sets via `TensorDataset.split()`.
+`f(X)` and then perturbed with uniform noise (`NOISE = 2`), and split 90% / 10%
+into train and test tensors, each wrapped in a `TensorDataset` + `DataLoader`
+(full-batch) for the `Trainer`.
 
 ![Feature correlation: ill-conditioned vs well-conditioned](images/feature_correlation.png)
 

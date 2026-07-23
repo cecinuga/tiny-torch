@@ -73,25 +73,29 @@ The training script (`quadratic.py`) does the following:
    because on `[-10, 10]` the `x²` term grows to values the model never saw
    during training.
 
-2. **Train with SGD.** For every epoch:
+2. **Train with a `Trainer`.** The train/test tensors are wrapped in a
+   `TensorDataset` + `DataLoader` (full-batch), and a `Trainer` ties together
+   the model, `MSELoss`, `SGD` and a `CosineSchedule` annealing the learning
+   rate from `MAX_LR = 1e-3` to `MIN_LR = 1e-6`:
    ```python
-   pred = model(X_train)             # forward
-   train_loss = loss(pred, train_y)  # MSE
-   train_loss.backward()             # backward: fill gradients
-   optimizer.step()                  # update the three coefficients
-   optimizer.zero_grad()             # reset gradients
+   for i, epoch in enumerate(range(EPOCHS)):
+       _ = trainer.train_epoch(train_dataloader, 1)
+
+       if i % EVAL_STEP == 0:
+           _ = trainer.eval(test_dataloader)
    ```
-   The `MSELoss` penalizes the squared distance between prediction and target,
-   and `SGD` moves the parameters against the gradient. Every few steps the
-   model is switched to `eval()` to log the test loss.
+   `train_epoch()` runs the forward/backward/optimizer-step internally and
+   logs the loss into `trainer.history`; `eval()` runs a no-grad pass over the
+   test set every `EVAL_STEP` epochs.
 
-3. **Plot.** The loss curves and the fitted parabola are drawn side by side.
+3. **Plot.** The loss curves (`trainer.train_loss` / `trainer.eval_loss`) and
+   the fitted parabola are drawn side by side.
 
-> ⚠️ **Gotcha.** The learning rate here is `1e-3`, ten times smaller than in
-> the simple example. The `x²` feature reaches values up to `25` on the train
-> split, so its gradients are much larger than those of the raw `x` — a bigger
-> learning rate makes the updates on the quadratic weight overshoot and the
-> loss diverge.
+> ⚠️ **Gotcha.** The peak learning rate here is `1e-3`, two orders of
+> magnitude smaller than in the simple example. The `x²` feature reaches
+> values up to `25` on the train split, so its gradients are much larger than
+> those of the raw `x` — a bigger learning rate makes the updates on the
+> quadratic weight overshoot and the loss diverge.
 
 ---
 

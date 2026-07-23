@@ -57,7 +57,7 @@ class DataLoader:
         self.shuffle:bool = shuffle
 
     def __len__(self) -> int:
-        return len(self.dataset)
+        return int(np.ceil(len(self.dataset)/self.batch_size))
 
     def __iter__(self) -> Iterator[tuple[Tensor, ...]]:
         indices = list(range(len(self.dataset)))

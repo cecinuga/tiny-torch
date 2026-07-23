@@ -82,7 +82,8 @@ class Trainer:
 
             # Only update every 'accumulation_steps'
             if (batch_idx + 1) % accumulation_steps == 0:
-                total_loss, accumulated_loss, num_batches = self._accumulate(total_loss, accumulated_loss, num_batches)
+                total_loss, _, num_batches = self._accumulate(total_loss, accumulated_loss, num_batches)
+                accumulated_loss = 0
                 self.step += 1
 
         if accumulated_loss > 0:
@@ -165,7 +166,7 @@ class Trainer:
             pickle.dump(checkpoint, f)
 
     def load(self, path: Path|str) -> None:
-        with open(path, 'wb') as f:
+        with open(path, 'rb') as f:
             checkpoint = pickle.load(f)
 
         self.epoch = checkpoint['epoch']

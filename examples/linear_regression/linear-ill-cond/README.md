@@ -133,7 +133,7 @@ two weight residuals is consistent.)
 
 The prediction residual is in the same ballpark for both datasets — both
 models make comparable predictions. The weights residual tells a completely
-different story: on the ill-conditioned data it is off by **six orders of
+different story: on the ill-conditioned data it is off by **several orders of
 magnitude**, while on the well-conditioned data it stays small and consistent
 with the closed-form solution.
 

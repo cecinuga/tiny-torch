@@ -116,16 +116,20 @@ If the model has learned *the* coefficients, both residuals should be small.
 ### Ill-conditioned results
 
 ```
-prediction residual: 4.53
-weights residual:    916,521.76
+prediction residual: 3.54
+weights residual:    8,770,009.37
 ```
 
 ### Well-conditioned results
 
 ```
-prediction residual: 1.43
-weights residual:    0.40
+prediction residual: 1.52
+weights residual:    0.42
 ```
+
+(Exact figures vary run to run — the noise added to the targets is drawn from
+an unseeded generator — but the multiple-orders-of-magnitude gap between the
+two weight residuals is consistent.)
 
 The prediction residual is in the same ballpark for both datasets — both
 models make comparable predictions. The weights residual tells a completely

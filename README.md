@@ -41,16 +41,21 @@ core/
 ├── activations.py       # Activation layers (ReLU, Sigmoid, Tanh, GELU, Softmax)
 ├── losses.py            # Loss objects (MSE, CrossEntropy, BinaryCrossEntropy)
 ├── layers.py            # Layer, Linear, Dropout, Sequential
+├── optimizer.py         # Optimizer, SGD, SGDM, Adam, AdamW
+├── graph.py             # ComputationalGraph: graphviz visualisation of a Sequential model
 ├── utils.py             # unbroadcast() helper for gradient reduction
 ├── autograd/            # Reverse-mode automatic differentiation
 │   ├── base.py          #   Function: base class for every backward node
 │   ├── arithmetic.py    #   Add/Sub/Mul/Div/Matmul/Sum/Reshape/Transpose backward
 │   ├── activations.py   #   ReLU/Sigmoid/Tanh/GELU/Softmax backward
 │   └── losses.py        #   MSE/CrossEntropy/BCE backward
-└── loader/              # Data loading pipeline
-    ├── loader.py        #   Dataset, TensorDataset, ImageDataset, DataLoader
-    ├── transformation.py#   RandomHorizontalFlip, RandomCrop, Compose
-    └── utils.py         #   image loading helpers
+├── dataset/              # Data loading pipeline
+│   ├── dataset.py        #   Dataset, TensorDataset, ImageDataset, DataLoader
+│   ├── transformation.py #   RandomHorizontalFlip, RandomCrop, Compose
+│   └── utils.py          #   image loading helpers
+└── training/             # Training loop orchestration
+    ├── trainer.py         #   Trainer: train_epoch/eval, checkpointing, grad clipping
+    └── schedulers.py      #   Schedule, CosineSchedule
 ```
 
 The design follows a clear **frontend / backend split**:
@@ -172,6 +177,12 @@ makes instances callable, and exposes a `parameters` property.
 | `Dropout`    | Inverted dropout with keep-probability scaling; a no-op when `training=False`. |
 | `Sequential` | Chains layers and forwards through them in order; aggregates their parameters. |
 
+`Sequential.save_graph(path, arch=True, forward=False, backward=False)` renders a
+`.png` of the model via `core/graph.py` (needs `graphviz`): a cluster per layer
+for the architecture, and — if requested — the forward/backward computational
+graphs built from a synthetic input, tensors colour-coded by role
+(input/weights/bias/hidden).
+
 ## Activation functions (`core/activations.py`)
 
 Each activation is available both as a pure NumPy function (`core/functions.py`)
@@ -199,9 +210,35 @@ cross-entropy loss.
 Each loss is callable (`loss(pred, target)`) and returns a scalar `Tensor` you can
 call `.backward()` on.
 
-## Data loading (`core/loader/`)
+## Optimizers (`core/optimizer.py`)
 
-The loader mirrors the PyTorch `Dataset` / `DataLoader` pattern.
+| Optimizer | Notes |
+|-----------|-------|
+| `SGD`     | Plain gradient descent with optional L2 weight decay. |
+| `SGDM`    | SGD with momentum. |
+| `Adam`    | Adaptive moments with bias correction. |
+| `AdamW`   | Adam with decoupled weight decay. |
+
+Every optimizer takes `model.parameters` and a learning rate; `step()` updates
+`param.data` in place, `zero_grad()` clears `param.grad`, and `get_state()`
+returns the optimizer's hyperparameters/buffers for checkpointing.
+
+## Training loop (`core/training/`)
+
+- **`Trainer`** (`trainer.py`) wraps a model, loss, optimizer and optional
+  scheduler. `train_epoch(dataloader, accumulation_steps=1)` runs one epoch
+  (with gradient accumulation and optional `clip_grad_norm` clipping) and
+  `eval(dataloader)` runs a no-grad pass, both logging into `trainer.history`
+  (`train_loss`, `eval_loss`, `lr`). `save()`/`load()` (de)serialize training
+  state to a checkpoint file via `pickle`.
+- **`Schedule`** (`schedulers.py`) is the abstract base for learning-rate
+  schedules; `CosineSchedule(max_lr, min_lr, total_epochs)` anneals the
+  learning rate from `max_lr` to `min_lr` following a cosine curve, applied by
+  `Trainer` at the end of every `train_epoch()` call.
+
+## Data loading (`core/dataset/`)
+
+The module mirrors the PyTorch `Dataset` / `DataLoader` pattern.
 
 - **`Dataset`** — abstract base defining `__len__` and `__getitem__`.
 - **`TensorDataset`** — wraps in-memory tensors and validates that they share the
@@ -220,12 +257,13 @@ Data augmentation transforms live in `transformation.py`:
 
 ## Examples
 
-See [`examples/regression.py`](examples/regression.py) for an end-to-end sketch: a
-noisy 1-D dataset, a `Sequential` model with a single `Linear` layer, and an
-`MSELoss` whose gradients flow back through the graph via `.backward()`.
+See [`examples/linear_regression/`](examples/linear_regression/) for a family
+of end-to-end regression scripts (linear, quadratic, cubic degree) built on
+`Trainer` + `DataLoader`, plus a notebook exploring the effect of
+ill-conditioned features on the learned coefficients.
 
 ```bash
-uv run python examples/regression.py
+uv run python examples/linear_regression/linear/linear.py
 ```
 
 ## Roadmap

@@ -12,8 +12,10 @@ trained by gradient descent.
 | [`cubic/`](./cubic) | `1.2·x³ − 2.3·x² + 2·x + 2` | `Linear(3, 1)` | `cubic.py` |
 
 Every example follows the same recipe: build a noisy dataset on `[-5, 5]`,
-train with `MSELoss` + `SGD`, then evaluate on the wider `[-10, 10]` to check
-that the model *extrapolates* instead of memorizing.
+wrap it in a `TensorDataset` + `DataLoader`, and train a `Trainer` (`MSELoss`
++ `SGD` + `CosineSchedule`) full-batch for a fixed number of epochs, then
+evaluate on the wider `[-10, 10]` to check that the model *extrapolates*
+instead of memorizing.
 
 ---
 
@@ -49,14 +51,15 @@ optimum — regardless of how non-linear the curve looks in `x`.
 
 Higher powers of `x` produce much larger feature values (on the train split
 `x³` reaches `125` while `x` stops at `5`), and therefore much larger
-gradients. To keep the updates from overshooting, each extra degree costs
-roughly a 10× smaller learning rate:
+gradients. To keep the updates from overshooting, each extra degree costs a
+much smaller learning rate. Each script anneals from `MAX_LR` down to `MIN_LR`
+over training with a `CosineSchedule`:
 
-| Degree | Learning rate |
-|---|---|
-| 1 (linear) | `1e-2` |
-| 2 (quadratic) | `1e-3` |
-| 3 (cubic) | `1e-4` |
+| Degree | MAX_LR | MIN_LR |
+|---|---|---|
+| 1 (linear) | `1e-1` | `1e-4` |
+| 2 (quadratic) | `1e-3` | `1e-6` |
+| 3 (cubic) | `1e-4` | `1e-7` |
 
 An alternative would be to normalize the features so every power lives on a
 comparable scale — then a single learning rate would work for all degrees.

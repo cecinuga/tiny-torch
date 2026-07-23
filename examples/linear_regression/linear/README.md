@@ -57,7 +57,7 @@ model = Sequential(
 
 ## The process
 
-The training script (`linear_regression.py`) does the following:
+The training script (`linear.py`) does the following:
 
 1. **Build the dataset.** Sample `x` on a line, compute `f(x)`, then add uniform
    noise to the targets so the problem is non-trivial. The train split lives on

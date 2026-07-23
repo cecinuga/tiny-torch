@@ -1,13 +1,13 @@
-from core.training import Schedule
-from core.tensor import Tensor
 import pickle
-from pathlib import Path
 import numpy as np
+from pathlib import Path
 
-from core.dataset import DataLoader
 from core.losses import Loss
-from core.optimizer import Optimizer
 from core.layers import Layer
+from core.tensor import Tensor
+from core.training.schedulers import Schedule
+from core.dataset import DataLoader
+from core.optimizer import Optimizer
 
 def clip_grad_norm(parameters: list[Tensor], max_norm: float = 1.0) -> float:
     # 1. Compute global norm across all parameters
@@ -31,14 +31,14 @@ def clip_grad_norm(parameters: list[Tensor], max_norm: float = 1.0) -> float:
 class Trainer:
     def __init__(self,
         model: Layer,
-        optimizer: Optimizer,
         loss_fn: Loss,
-        scheduler: Schedule|None,
+        optimizer: Optimizer,
+        scheduler: Schedule|None = None,
         grad_clip_norm: float|None = None
     ):
         self.model: Layer = model
-        self.optimizer: Optimizer = optimizer
         self.loss_fn: Loss = loss_fn
+        self.optimizer: Optimizer = optimizer
         self.scheduler: Schedule|None = scheduler
         self.grad_clip_norm: float|None = grad_clip_norm
 
@@ -60,7 +60,7 @@ class Trainer:
 
         return total_loss, accumulated_loss, num_batches
 
-    def train_epoch(self, dataloader: DataLoader, accumulation_steps:int = 1):
+    def train_epoch(self, dataloader: DataLoader, accumulation_steps:int = 1) -> float:
         self.model.train()
 
         total_loss: float = 0
@@ -140,6 +140,12 @@ class Trainer:
         if self.scheduler is not None:
             return self.scheduler.get_state()
         return None
+
+    def get_train_losses(self):
+        return self.history['train_losses']
+
+    def get_eval_losses(self):
+        return self.history['eval_losses']
 
     def save(self, path: Path|str) -> None:
         checkpoint = {

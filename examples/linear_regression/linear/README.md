@@ -69,23 +69,27 @@ The training script (`linear.py`) does the following:
    This is the best a linear model can possibly do, and it is what our gradient
    descent should converge towards.
 
-3. **Train with SGD.** For every epoch:
+3. **Train with a `Trainer`.** The train/test tensors are wrapped in a
+   `TensorDataset` + `DataLoader` (full-batch), and a `Trainer` ties together
+   the model, `MSELoss`, `SGD` and a `CosineSchedule` annealing the learning
+   rate from `MAX_LR = 1e-1` to `MIN_LR = 1e-4`:
    ```python
-   pred = model(train_x)          # forward
-   train_loss = loss(pred, train_y)  # MSE
-   train_loss.backward()          # backward: fill gradients
-   optimizer.step()               # update slope & intercept
-   optimizer.zero_grad()          # reset gradients
+   for i, epoch in enumerate(range(EPOCHS)):
+       _ = trainer.train_epoch(train_dataloader, 1)
+
+       if i % EVAL_STEP == 0:
+           _ = trainer.eval(test_dataloader)
    ```
-   The `MSELoss` penalizes the squared distance between prediction and target,
-   and `SGD` (learning rate `1e-2`) moves the parameters against the gradient.
-   Every few steps the model is switched to `eval()` to log the test loss.
+   `train_epoch()` runs the forward/backward/optimizer-step internally and
+   logs the loss into `trainer.history`; `eval()` runs a no-grad pass over the
+   test set every `EVAL_STEP` epochs.
 
-4. **Plot.** The loss curves and the fitted line are drawn side by side.
+4. **Plot.** The loss curves (`trainer.train_loss` / `trainer.eval_loss`) and
+   the fitted line are drawn side by side.
 
-> ⚠️ **Gotcha (see `WIL.md`).** The prediction must be `model(x)`, not
-> `model(y)`. Feeding `y` makes the model memorize the targets instead of
-> learning the `x → y` relationship — that is not regression.
+> ⚠️ **Gotcha (see [`arch/WIL.md`](./arch/WIL.md)).** The prediction must be
+> `model(x)`, not `model(y)`. Feeding `y` makes the model memorize the targets
+> instead of learning the `x → y` relationship — that is not regression.
 
 ---
 
@@ -124,7 +128,7 @@ analytic solution without ever being told the true `2·x + 5`.
 ## Run it
 
 ```bash
-python examples/linear_regression/linear_regression.py
+python examples/linear_regression/linear/linear.py
 ```
 
 You can regenerate the architecture diagrams by uncommenting the

@@ -141,11 +141,13 @@ class Trainer:
             return self.scheduler.get_state()
         return None
 
-    def get_train_losses(self):
-        return self.history['train_losses']
+    @property
+    def train_loss(self):
+        return self.history['train_loss']
 
-    def get_eval_losses(self):
-        return self.history['eval_losses']
+    @property
+    def eval_loss(self):
+        return self.history['eval_loss']
 
     def save(self, path: Path|str) -> None:
         checkpoint = {

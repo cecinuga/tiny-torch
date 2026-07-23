@@ -1,6 +1,9 @@
+from __future__ import annotations
 import numpy as np
-from typing import override
-from core.autograd import Function
+from typing import override, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from core.autograd import Function
 
 class Tensor:
     def __init__(self, data, requires_grad:bool=True, role:str|None=None):

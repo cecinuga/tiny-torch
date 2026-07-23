@@ -29,7 +29,7 @@ class TensorDataset(Dataset):
 
     @override
     def __len__(self) -> int:
-        return len(self.tensors)
+        return len(self.tensors[0])
 
     @override
     def __getitem__(self, idx: int):
